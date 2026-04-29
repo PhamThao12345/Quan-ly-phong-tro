@@ -300,9 +300,8 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
           
           {/* Hiển thị Họ tên khách thuê */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Họ và tên khách thuê</label>
-            <div className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 flex items-center gap-2">
-              <span className="material-symbols-outlined text-emerald-600 text-lg">person</span>
+            <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">HỌ VÀ TÊN</label>
+            <div className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 flex items-center">
               {previewData?.tenantName || previewData?.mainTenant || (previewLoading ? 'Đang tải...' : 'Chưa có thông tin')}
             </div>
           </div>
