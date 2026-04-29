@@ -1,0 +1,38 @@
+# Root-level .gitignore
+
+# Node modules (cả backend và frontend)
+node_modules/
+**/node_modules/
+
+# Environment files
+.env
+**/.env
+
+# Database SQLite
+*.db
+*.db-journal
+dev.db
+dev.db-journal
+
+# Prisma generated
+**/generated/prisma/
+
+# Build output
+**/dist/
+**/build/
+
+# Logs
+*.log
+**/logs/
+
+# Cache
+**/.cache/
+**/.vite/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

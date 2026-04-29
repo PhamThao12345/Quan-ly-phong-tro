@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    Int      @id @default(autoincrement()) @map("user_id")
+  employeeCode          String?  @unique @map("employee_code")
+  username              String   @unique
+  password              String
+  fullName              String?  @map("full_name")
+  cccd                  String?  @unique
+  phoneNumber           String?  @unique @map("phone_number")
+  email                 String?  @unique
+  status                String   @default("ACTIVE") 
+  role                  String   @default("STAFF") 
+  permissions           String?  @default("{}") // JSON string cho quyền hạn
+  failedLoginAttempts   Int      @default(0) @map("failed_login_attempts")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  activityLogs          ActivityLog[]
+
+  @@map("users")
+}
+
+model Hostel {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  address     String?
+  city        String?  @default("Hồ Chí Minh")
+  district    String?
+  description String?
+  status      String   @default("HOAT_DONG")
+  rooms       Room[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  @@map("hostels")
+}
+
+model Room {
+  id          Int      @id @default(autoincrement())
+  hostelId    Int      @map("hostel_id")
+  hostel      Hostel   @relation(fields: [hostelId], references: [id], onDelete: Restrict)
+  roomNumber  String   @map("room_number")
+  floor       Int?
+  price       Float?
+  electricityIndex Float?   @default(0) @map("electricity_index")
+  description String?
+  status      String   @default("TRONG") // TRONG, DANG_O, BAO_TRI
+  tenants     Tenant[]
+  contracts   Contract[]
+  services    RoomService[]
+  electricityMeters ElectricityMeter[]
+  invoices    Invoice[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@unique([hostelId, roomNumber])
+  @@map("rooms")
+}
+
+model Tenant {
+  id              Int       @id @default(autoincrement()) @map("tenant_id")
+  fullName        String    @map("full_name")
+  cccd            String    @unique
+  phoneNumber     String    @map("phone_number")
+  email           String?
+  gender          String?   // NAM, NU, KHAC
+  dateOfBirth     DateTime? @map("date_of_birth")
+  address         String?   // Địa chỉ hiện tại
+  hometown        String?   // Quê quán / Thường trú
+  roomId          Int?      @map("room_id")
+  room            Room?     @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  status          String    @default("DANG_THUE") // DANG_THUE, NGUNG_THUE
+  residencyStatus String    @default("CHUA_DANG_KY") @map("residency_status") // DA_DANG_KY, CHUA_DANG_KY
+  contractTenants ContractTenant[]
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("tenants")
+}
+
+model Contract {
+  id          Int       @id @default(autoincrement()) @map("contract_id")
+  roomId      Int       @map("room_id")
+  room        Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  startDate   DateTime  @map("start_date")
+  endDate     DateTime  @map("end_date")
+  deposit     Float     @default(0)
+  content     String?   
+  status      String    @default("DANG_HIEU_LUC") 
+  // DANG_HIEU_LUC, SAP_HET_HAN, DA_KET_THUC, DA_HUY
+  tenants     ContractTenant[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("contracts")
+}
+
+model ContractTenant {
+  id          Int      @id @default(autoincrement())
+  contractId  Int      @map("contract_id")
+  contract    Contract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  tenantId    Int      @map("tenant_id")
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  isMain      Boolean  @default(false) @map("is_main") 
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([contractId, tenantId])
+  @@map("contract_tenants")
+}
+
+model Service {
+  id          Int      @id @default(autoincrement()) @map("service_id")
+  name        String   @map("service_name")
+  price       Float
+  unit        String   // kWh, nguoi/thang, phong/thang, lan
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE
+  rooms       RoomService[]
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("services")
+}
+
+model RoomService {
+  id        Int      @id @default(autoincrement())
+  roomId    Int      @map("room_id")
+  serviceId Int      @map("service_id")
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, serviceId])
+  @@map("room_services")
+}
+
+model ElectricityMeter {
+  id              Int      @id @default(autoincrement()) @map("meter_id")
+  roomId          Int      @map("room_id")
+  room            Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  month           Int
+  year            Int
+  previousIndex   Float    @map("previous_index")
+  currentIndex    Float    @map("current_index")
+  unitPrice       Float    @map("unit_price")
+  consumption     Float    
+  amount          Float    
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@unique([roomId, month, year])
+  @@map("electricity_meters")
+}
+
+model Invoice {
+  id              Int      @id @default(autoincrement()) @map("invoice_id")
+  invoiceCode     String   @unique @map("invoice_code")
+  roomId          Int      @map("room_id")
+  room            Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  month           Int
+  year            Int
+  totalAmount     Float    @default(0) @map("total_amount")
+  status          String   @default("DA_TAO") // DA_TAO, DA_GUI, DA_THANH_TOAN, QUA_HAN
+  items           InvoiceItem[]
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id              Int      @id @default(autoincrement())
+  invoiceId       Int      @map("invoice_id")
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  serviceName     String   @map("service_name")
+  quantity        Float    @default(1)
+  unitPrice       Float    @default(0) @map("unit_price")
+  amount          Float
+  description     String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("invoice_items")
+}
+
+model ActivityLog {
+  id          Int      @id @default(autoincrement()) @map("log_id")
+  userId      Int      @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      String
+  module      String?
+  details     String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("activity_logs")
+}
