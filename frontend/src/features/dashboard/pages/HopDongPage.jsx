@@ -880,7 +880,7 @@ Mọi hành vi vi phạm pháp luật hoặc nội quy nghiêm trọng sẽ dẫ
             </div>
             <h3 className="text-2xl font-['Manrope'] font-[800] text-[#191c1d] mb-3">Xác nhận xoá?</h3>
             <p className="text-[#6d7a72] mb-10 text-sm leading-relaxed px-4">
-              Hành động này sẽ xoá vĩnh viễn hợp đồng của <b className="text-[#191c1d]">{modalData.mainTenant.fullName}</b> tại phòng <b className="text-[#191c1d]">{modalData.roomNumber || modalData.room?.roomNumber}</b>.
+              Hành động này sẽ xoá vĩnh viễn hợp đồng của <b className="text-[#191c1d]">{(modalData.tenants?.find(t => t.isMain)?.tenant?.fullName) || (modalData.tenants?.[0]?.tenant?.fullName) || 'Khách thuê'}</b> tại phòng <b className="text-[#191c1d]">{modalData.roomNumber || modalData.room?.roomNumber}</b>.
             </p>
             <div className="flex gap-4">
               <button onClick={closeModals} className="flex-1 py-4 bg-[#f8f9fa] text-[#6d7a72] font-bold rounded-2xl hover:bg-[#e1e3e4] transition-all">Huỷ</button>

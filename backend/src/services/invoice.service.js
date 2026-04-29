@@ -120,6 +120,33 @@ const calculateInvoicePreview = async (roomId, month, year) => {
 };
 
 /**
+ * Tìm tên khách thuê lịch sử từ contract active trong tháng/năm của hóa đơn
+ */
+const lookupHistoricalTenant = async (roomId, month, year) => {
+  try {
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0, 23, 59, 59);
+    const contract = await prisma.contract.findFirst({
+      where: {
+        roomId: Number(roomId),
+        startDate: { lte: endOfMonth },
+        endDate: { gte: startOfMonth }
+      },
+      include: {
+        tenants: {
+          where: { isMain: true },
+          include: { tenant: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    return contract?.tenants[0]?.tenant?.fullName || null;
+  } catch {
+    return null;
+  }
+};
+
+/**
  * Tạo hóa đơn mới
  */
 const createInvoice = async (data) => {
@@ -199,8 +226,7 @@ const getInvoices = async (params) => {
       include: {
         room: {
           include: {
-            hostel: true,
-            tenants: { where: { status: 'DANG_THUE' } }
+            hostel: true
           }
         },
         items: true
@@ -209,13 +235,22 @@ const getInvoices = async (params) => {
     })
   ]);
 
-  return {
-    data: invoices.map(inv => ({
+  // Resolve tenant names - use stored historical data first, then lookup from contracts for old invoices
+  const enrichedInvoices = await Promise.all(invoices.map(async inv => {
+    let tenantName = inv.tenantName;
+    if (!tenantName) {
+      tenantName = await lookupHistoricalTenant(inv.roomId, inv.month, inv.year);
+    }
+    return {
       ...inv,
       hostelName: inv.hostelName || inv.room?.hostel?.name || 'N/A',
       roomNumber: inv.roomNumber || inv.room?.roomNumber || 'N/A',
-      mainTenant: inv.tenantName || inv.room?.tenants[0]?.fullName || 'N/A'
-    })),
+      mainTenant: tenantName || 'N/A'
+    };
+  }));
+
+  return {
+    data: enrichedInvoices,
     pagination: {
       total,
       page: Number(page),
@@ -404,8 +439,7 @@ const getInvoiceById = async (id) => {
     include: {
       room: {
         include: {
-          hostel: true,
-          tenants: { where: { status: 'DANG_THUE' } }
+          hostel: true
         }
       },
       items: true
@@ -414,11 +448,16 @@ const getInvoiceById = async (id) => {
 
   if (!inv) throw { status: 404, message: 'Không tìm thấy hóa đơn' };
 
+  let tenantName = inv.tenantName;
+  if (!tenantName) {
+    tenantName = await lookupHistoricalTenant(inv.roomId, inv.month, inv.year);
+  }
+
   return {
     ...inv,
     hostelName: inv.hostelName || inv.room?.hostel?.name || 'N/A',
     roomNumber: inv.roomNumber || inv.room?.roomNumber || 'N/A',
-    mainTenant: inv.tenantName || inv.room?.tenants[0]?.fullName || 'N/A'
+    mainTenant: tenantName || 'N/A'
   };
 };
 
