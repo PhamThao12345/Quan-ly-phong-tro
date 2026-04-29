@@ -306,7 +306,7 @@ const terminateContract = async (id) => {
     // 1. Cập nhật trạng thái HĐ
     const updated = await tx.contract.update({
       where: { id },
-      data: { status: 'DA_KET_THUC' }
+      data: { status: 'DA_KET_THUC', endDate: new Date() }
     });
 
     // 2. Cập nhật phòng về Trống
