@@ -219,9 +219,22 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
           <h2 className="text-2xl font-extrabold text-slate-900 font-headline">
             {isView ? 'Chi tiết hóa đơn' : (invoiceId ? 'Cập nhật hóa đơn' : 'Thêm hóa đơn mới')}
           </h2>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
-            <span className="material-symbols-outlined">close</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {invoiceId && !isView && (
+              <button 
+                type="button"
+                onClick={() => fetchPreview(formData.roomId, formData.month, formData.year)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 text-amber-700 rounded-lg text-[10px] font-bold uppercase tracking-wider hover:bg-amber-100 transition-all border border-amber-200"
+                title="Lấy lại giá dịch vụ và danh sách dịch vụ mới nhất từ hệ thống"
+              >
+                <span className="material-symbols-outlined text-sm">refresh</span>
+                Cập nhật giá mới
+              </button>
+            )}
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-600 transition-colors">
+              <span className="material-symbols-outlined">close</span>
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -288,119 +301,93 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
           {/* Luôn hiển thị các trường thông tin bên dưới */}
           <div className={`space-y-5 transition-opacity duration-300 ${previewLoading ? 'opacity-50' : 'opacity-100'}`}>
             
-            {/* Họ và tên */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Họ và tên</label>
-              <input 
-                className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-900 font-semibold cursor-not-allowed outline-none text-sm" 
-                readOnly 
-                type="text" 
-                value={previewData?.mainTenant || '---'}
-              />
-            </div>
-
-            {/* Tiền phòng & Tiền điện */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Tiền phòng</label>
-                <input 
-                  className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-not-allowed outline-none text-sm" 
-                  readOnly 
-                  type="text" 
-                  value={getItemValue('Tiền phòng')}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Tiền điện</label>
-                <div className="relative">
-                  <input 
-                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-not-allowed outline-none text-sm" 
-                    readOnly 
-                    type="text" 
-                    value={getItemValue('Điện')}
-                  />
-                  <span className="block text-[10px] text-emerald-600 font-medium mt-1 ml-1 italic min-h-[14px]">
-                    {getItemDesc('Điện')}
-                  </span>
+            {/* Danh sách dịch vụ động - Không fix cứng 5 loại nữa */}
+            {previewData?.items?.length > 0 ? (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4">
+                  {previewData.items.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-emerald-100 transition-colors">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${
+                          item.serviceName.toLowerCase().includes('điện') ? 'bg-amber-50 text-amber-600' :
+                          item.serviceName.toLowerCase().includes('nước') ? 'bg-blue-50 text-blue-600' :
+                          item.serviceName.toLowerCase().includes('phòng') ? 'bg-emerald-50 text-emerald-600' :
+                          'bg-slate-100 text-slate-500'
+                        }`}>
+                          <span className="material-symbols-outlined text-xl">
+                            {item.serviceName.toLowerCase().includes('điện') ? 'bolt' :
+                             item.serviceName.toLowerCase().includes('nước') ? 'water_drop' :
+                             item.serviceName.toLowerCase().includes('phòng') ? 'home' :
+                             'service_toolbox'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-slate-700">{item.serviceName}</p>
+                          <p className="text-[10px] text-slate-400 font-medium uppercase">{item.description}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-extrabold text-slate-900">{item.amount.toLocaleString()}đ</p>
+                        <p className="text-[10px] text-slate-400 italic">
+                          {item.quantity} {item.serviceName.toLowerCase().includes('phòng') ? 'tháng' : ''} x {item.unitPrice.toLocaleString()}đ
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className="py-12 text-center bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">description</span>
+                <p className="text-sm text-slate-400 font-medium">Vui lòng chọn phòng để xem chi tiết chi phí</p>
+              </div>
+            )}
 
-            {/* Tiền nước & Tiền mạng */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Tiền nước</label>
-                <div className="relative">
-                  <input 
-                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-not-allowed outline-none text-sm" 
-                    readOnly 
-                    type="text" 
-                    value={getItemValue('Nước')}
-                  />
-                  <span className="block text-[10px] text-emerald-600 font-medium mt-1 ml-1 italic min-h-[14px]">
-                    {getItemDesc('Nước')}
-                  </span>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Tiền mạng Internet</label>
-                <div className="relative">
-                  <input 
-                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-not-allowed outline-none text-sm" 
-                    readOnly 
-                    type="text" 
-                    value={getItemValue('Mạng')}
-                  />
-                  <span className="block text-[10px] text-emerald-600 font-medium mt-1 ml-1 italic min-h-[14px]">
-                    {getItemDesc('Mạng')}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Tiền rác, Được trừ & Trạng thái */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Tiền rác</label>
-                <div className="relative">
-                  <input 
-                    className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 cursor-not-allowed outline-none text-sm" 
-                    readOnly 
-                    type="text" 
-                    value={getItemValue('Rác')}
-                  />
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1 text-red-500">Được trừ (VNĐ)</label>
-                <input 
-                  className="w-full px-4 py-2.5 bg-white border border-red-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none text-sm font-bold text-red-600 disabled:bg-slate-50 disabled:text-slate-400" 
-                  type="number"
-                  value={formData.discount}
-                  onChange={e => setFormData(prev => ({...prev, discount: Number(e.target.value)}))}
-                  disabled={isView}
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {!isView && (
+            {/* Ô Được trừ - Chỉ hiện khi Sửa hoặc Xem Chi tiết */}
+            {invoiceId && (
+              <div className="grid grid-cols-2 gap-4 pt-2">
                 <div className="space-y-1.5 col-span-2">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Trạng thái thanh toán</label>
-                  <select 
-                    value={formData.status}
-                    onChange={e => setFormData(prev => ({...prev, status: e.target.value}))}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none text-sm font-bold text-emerald-700"
-                  >
-                    <option value="DA_TAO">Đã tạo</option>
-                    <option value="DA_GUI">Đã gửi</option>
-                    <option value="DA_THANH_TOAN">Đã thanh toán</option>
-                    <option value="QUA_HAN">Quá hạn</option>
-                  </select>
+                  <label className="block text-xs font-bold text-red-500 uppercase tracking-widest px-1">Được trừ (VNĐ)</label>
+                  <div className="relative">
+                    {isView ? (
+                      <input 
+                        className="w-full px-4 py-3 bg-red-50/50 border border-red-100 rounded-xl text-red-600 font-bold outline-none text-base cursor-not-allowed" 
+                        readOnly 
+                        type="text" 
+                        value={`${(formData.discount || 0).toLocaleString()}đ`}
+                      />
+                    ) : (
+                      <>
+                        <input 
+                          className="w-full px-4 py-3 bg-white border border-red-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none text-base font-bold text-red-600 pr-12" 
+                          type="number"
+                          value={formData.discount}
+                          onChange={e => setFormData(prev => ({...prev, discount: Number(e.target.value)}))}
+                          placeholder="0"
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 text-red-300 font-bold text-sm">VNĐ</span>
+                      </>
+                    )}
+                  </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {!isView && (
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Trạng thái thanh toán</label>
+                <select 
+                  value={formData.status}
+                  onChange={e => setFormData(prev => ({...prev, status: e.target.value}))}
+                  className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none text-sm font-bold text-emerald-700"
+                >
+                  <option value="DA_TAO">Đã tạo</option>
+                  <option value="DA_GUI">Đã gửi</option>
+                  <option value="DA_THANH_TOAN">Đã thanh toán</option>
+                  <option value="QUA_HAN">Quá hạn</option>
+                </select>
+              </div>
+            )}
 
             {/* Tổng tiền */}
             <div className="mt-8 px-6 py-5 bg-emerald-50/60 border border-emerald-100 rounded-2xl flex items-center justify-between shadow-sm">

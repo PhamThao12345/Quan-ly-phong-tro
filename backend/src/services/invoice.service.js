@@ -390,8 +390,22 @@ const sendInvoiceEmail = async (id) => {
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="3" style="padding: 15px 10px; text-align: right; font-weight: bold; font-size: 16px;">Tổng cộng:</td>
-                <td style="padding: 15px 10px; text-align: right; font-weight: bold; font-size: 18px; color: #e53e3e;">
+                <td colspan="3" style="padding: 10px; text-align: right; color: #666;">Cộng thành tiền:</td>
+                <td style="padding: 10px; text-align: right; color: #333; font-weight: bold;">
+                  ${(invoice.totalAmount + (invoice.discount || 0)).toLocaleString()}đ
+                </td>
+              </tr>
+              ${invoice.discount > 0 ? `
+              <tr>
+                <td colspan="3" style="padding: 10px; text-align: right; color: #e53e3e;">Giảm giá (Được trừ):</td>
+                <td style="padding: 10px; text-align: right; color: #e53e3e; font-weight: bold;">
+                  -${invoice.discount.toLocaleString()}đ
+                </td>
+              </tr>
+              ` : ''}
+              <tr style="background-color: #f0fff4;">
+                <td colspan="3" style="padding: 15px 10px; text-align: right; font-weight: bold; font-size: 16px; color: #006948;">TỔNG THANH TOÁN:</td>
+                <td style="padding: 15px 10px; text-align: right; font-weight: bold; font-size: 20px; color: #006948;">
                   ${invoice.totalAmount.toLocaleString()}đ
                 </td>
               </tr>
