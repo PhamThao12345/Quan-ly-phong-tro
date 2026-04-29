@@ -213,7 +213,9 @@ const InvoicePage = () => {
           </div>
           <div className="flex gap-2">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a72] text-sm">search</span>
+              <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none">
+                <span className="material-symbols-outlined text-[#6d7a72] text-sm">search</span>
+              </div>
               <input 
                 value={filters.search}
                 onChange={e => setFilters({...filters, search: e.target.value})}
@@ -222,6 +224,7 @@ const InvoicePage = () => {
                 type="text" 
               />
             </div>
+
             <button onClick={() => setShowFilter(!showFilter)} className={`p-2 rounded-lg transition-all ${showFilter ? 'bg-[#006948] text-white' : 'text-slate-400 hover:bg-slate-50'}`}>
               <span className="material-symbols-outlined">filter_list</span>
             </button>

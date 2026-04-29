@@ -215,9 +215,12 @@ const QuanLyDienPage = () => {
           </div>
           <div className="flex items-center gap-4">
             <div className="relative w-80">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a72] text-lg">search</span>
+              <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none">
+                <span className="material-symbols-outlined text-[#6d7a72] text-lg">search</span>
+              </div>
               <input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="w-full bg-[#f3f4f5] border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-[#006948]/20" placeholder="Tìm kiếm phòng, khu trọ..." type="text" />
             </div>
+
             <button onClick={() => setShowFilter(!showFilter)} className={`p-2 rounded-lg transition-all ${showFilter ? 'bg-[#006948] text-white' : 'text-[#6d7a72] hover:bg-[#f8f9fa]'}`}>
               <span className="material-symbols-outlined">filter_list</span>
             </button>

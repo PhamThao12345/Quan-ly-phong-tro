@@ -378,7 +378,9 @@ Mọi hành vi vi phạm pháp luật hoặc nội quy nghiêm trọng sẽ dẫ
           <h2 className="font-['Manrope'] font-[800] text-lg text-[#191c1d]">Danh sách hợp đồng</h2>
           <div className="flex gap-4">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a72] text-sm">search</span>
+              <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none">
+                <span className="material-symbols-outlined text-[#6d7a72] text-sm">search</span>
+              </div>
               <input 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
@@ -386,6 +388,7 @@ Mọi hành vi vi phạm pháp luật hoặc nội quy nghiêm trọng sẽ dẫ
                 className="pl-10 pr-4 py-1.5 bg-[#f8f9fa] border border-[#e1e3e4] rounded-xl text-sm w-64 focus:outline-none focus:border-[#006948] transition-all"
               />
             </div>
+
             <button 
               onClick={() => setShowFilter(!showFilter)}
               className={`p-1.5 rounded-lg transition-all ${showFilter ? 'bg-[#006948] text-white' : 'text-[#6d7a72] hover:bg-[#f8f9fa]'}`}

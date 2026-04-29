@@ -150,9 +150,12 @@ const KhachThuePage = () => {
         <h3 className="text-lg font-bold text-[#191c1d]">Danh sách khách thuê</h3>
         <div className="flex items-center gap-3">
           <div className="relative w-64">
-            <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+            <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none">
+              <span className="material-symbols-outlined text-slate-400 text-lg">search</span>
+            </div>
             <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Tìm kiếm khách thuê..." className="w-full pl-10 pr-4 py-1.5 bg-[#f8f9fa] border border-[#bccac0]/30 rounded-lg text-sm focus:ring-2 focus:ring-[#006948]/20 outline-none"/>
           </div>
+
           <button onClick={()=>setShowFilter(!showFilter)} className="p-2 text-[#6d7a72] hover:bg-[#f8f9fa] rounded-lg"><span className="material-symbols-outlined">filter_list</span></button>
           {canEdit && <button onClick={handleExport} className="p-2 text-[#6d7a72] hover:bg-[#f8f9fa] rounded-lg"><span className="material-symbols-outlined">download</span></button>}
         </div>

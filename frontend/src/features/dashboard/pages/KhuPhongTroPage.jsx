@@ -158,7 +158,9 @@ const KhuPhongTroPage = () => {
           </div>
           <div className="flex gap-4 items-center">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a72] text-[18px]">search</span>
+              <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none">
+                <span className="material-symbols-outlined text-[#6d7a72] text-[18px]">search</span>
+              </div>
               <input
                 value={hostelSearch}
                 onChange={e => setHostelSearch(e.target.value)}
@@ -166,6 +168,7 @@ const KhuPhongTroPage = () => {
                 className="h-10 pl-9 pr-4 bg-[#f8f9fa] border border-[#e1e3e4] rounded-xl text-sm focus:outline-none focus:border-[#006948] transition-all w-48"
               />
             </div>
+
             {canEdit && (
               <button
                 onClick={() => { setModalType('HOSTEL'); setModalAction('ADD'); setModalData({ name: '', address: '', city: 'Hồ Chí Minh', district: '', status: 'HOAT_DONG' }); }}
@@ -235,7 +238,9 @@ const KhuPhongTroPage = () => {
           </div>
           <div className="flex gap-4 items-center">
             <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#6d7a72] text-[18px]">search</span>
+              <div className="absolute left-3 inset-y-0 flex items-center pointer-events-none">
+                <span className="material-symbols-outlined text-[#6d7a72] text-[18px]">search</span>
+              </div>
               <input
                 value={roomSearch}
                 onChange={e => { setRoomSearch(e.target.value); setRoomPage(1); }}
@@ -243,6 +248,7 @@ const KhuPhongTroPage = () => {
                 className="h-10 pl-9 pr-4 bg-[#f8f9fa] border border-[#e1e3e4] rounded-xl text-sm focus:outline-none focus:border-[#006948] transition-all w-48"
               />
             </div>
+
             {canEdit && (
               <button
                 onClick={() => { setModalType('ROOM'); setModalAction('ADD'); setModalData({ roomNumber: '', floor: '', price: '', electricityIndex: 0, status: 'TRONG', hostelId: hostels[0]?.id || '' }); }}
