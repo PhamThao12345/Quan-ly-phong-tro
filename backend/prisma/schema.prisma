@@ -88,7 +88,7 @@ model Tenant {
 model Contract {
   id          Int       @id @default(autoincrement()) @map("contract_id")
   roomId      Int       @map("room_id")
-  room        Room      @relation(fields: [roomId], references: [id], onDelete: Restrict)
+  room        Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
   startDate   DateTime  @map("start_date")
   endDate     DateTime  @map("end_date")
   deposit     Float     @default(0)
