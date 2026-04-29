@@ -127,6 +127,12 @@ const HopDongPage = () => {
         return;
       }
 
+      const phones = allTenants.map(t => t.phoneNumber?.trim());
+      if (phones.some(p => !p)) {
+        showToast('Vui lòng nhập đầy đủ số điện thoại cho tất cả khách thuê', 'error');
+        return;
+      }
+
       const duplicateCccd = cccds.find((c, i) => cccds.indexOf(c) !== i);
       if (duplicateCccd) {
         showToast(`CCCD ${duplicateCccd} bị nhập trùng lặp!`, 'error');
@@ -673,8 +679,8 @@ Mọi hành vi vi phạm pháp luật hoặc nội quy nghiêm trọng sẽ dẫ
                               }} className="w-full px-3 py-2 bg-white border border-[#bccac0]/30 rounded-lg text-sm focus:outline-none focus:border-[#006948]" placeholder="Quê quán" />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-[#6d7a72] uppercase ml-1">Số điện thoại</label>
-                              <input value={t.phoneNumber} onChange={e => {
+                              <label className="text-[9px] font-bold text-[#6d7a72] uppercase ml-1">Số điện thoại <span className="text-red-500">*</span></label>
+                              <input required value={t.phoneNumber} onChange={e => {
                                 const newT = [...modalData.additionalTenants];
                                 newT[idx].phoneNumber = e.target.value;
                                 setModalData({...modalData, additionalTenants: newT});
