@@ -330,15 +330,13 @@ const InvoicePage = () => {
           </table>
         </div>
 
-        {/* Pagination */}
-        <div className="px-8 py-4 bg-[#f8f9fa] flex justify-between items-center border-t border-[#edeeef]">
-          <p className="text-xs text-[#3d4a42] font-medium">Hiển thị {invoices.length} trên {pagination.total} hóa đơn</p>
-          <div className="flex gap-1">
-            <button disabled={pagination.page === 1} onClick={() => setPagination({...pagination, page: pagination.page - 1})} className="p-2 hover:bg-white rounded-lg transition-colors disabled:opacity-30"><span className="material-symbols-outlined text-sm">chevron_left</span></button>
-            {[...Array(pagination.totalPages)].map((_, i) => (
-              <button key={i+1} onClick={() => setPagination({...pagination, page: i+1})} className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${pagination.page === i+1 ? 'bg-[#006948] text-white shadow-md' : 'hover:bg-white text-[#191c1d]'}`}>{i+1}</button>
-            ))}
-            <button disabled={pagination.page === pagination.totalPages} onClick={() => setPagination({...pagination, page: pagination.page + 1})} className="p-2 hover:bg-white rounded-lg transition-colors disabled:opacity-30"><span className="material-symbols-outlined text-sm">chevron_right</span></button>
+        {/* Pagination Footer */}
+        <div className="px-6 py-4 bg-[#f8f9fa] flex items-center justify-between border-t border-[#bccac0]/10">
+          <p className="text-xs text-slate-500">Hiển thị <b className="text-[#191c1d]">{invoices.length}</b> trên <b className="text-[#191c1d]">{pagination.total}</b> hóa đơn</p>
+          <div className="flex items-center gap-1">
+            <button disabled={pagination.page === 1} onClick={() => setPagination({...pagination, page: pagination.page - 1})} className="p-2 text-slate-400 hover:text-[#006948] disabled:opacity-30"><span className="material-symbols-outlined">chevron_left</span></button>
+            <button className="w-8 h-8 rounded-lg bg-[#006948] text-white text-xs font-bold">{pagination.page}</button>
+            <button disabled={pagination.page >= pagination.totalPages} onClick={() => setPagination({...pagination, page: pagination.page + 1})} className="p-2 text-slate-400 hover:text-[#006948] disabled:opacity-30"><span className="material-symbols-outlined">chevron_right</span></button>
           </div>
         </div>
       </div>

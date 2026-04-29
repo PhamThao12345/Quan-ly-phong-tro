@@ -512,21 +512,13 @@ Mọi hành vi vi phạm pháp luật hoặc nội quy nghiêm trọng sẽ dẫ
           </tbody>
         </table>
 
-        {/* PHÂN TRANG */}
-        <div className="px-8 py-5 flex justify-between items-center border-t border-[#f3f4f5] bg-[#f8f9fa]/30">
-          <p className="text-xs text-[#6d7a72]">Hiển thị <b>{contracts.length}</b> trên <b>{totalCount}</b> hợp đồng</p>
-          <div className="flex gap-2">
-            <button disabled={page === 1} onClick={() => setPage(page - 1)} className="p-2 rounded-xl border border-[#e1e3e4] hover:bg-white transition-all disabled:opacity-30">
-              <span className="material-symbols-outlined text-sm">chevron_left</span>
-            </button>
-            {[...Array(totalPages)].map((_, i) => (
-              <button key={i} onClick={() => setPage(i + 1)} className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${page === i + 1 ? 'bg-[#006948] text-white shadow-md shadow-emerald-900/10' : 'border border-[#e1e3e4] hover:bg-white text-[#6d7a72]'}`}>
-                {i + 1}
-              </button>
-            ))}
-            <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="p-2 rounded-xl border border-[#e1e3e4] hover:bg-white transition-all disabled:opacity-30">
-              <span className="material-symbols-outlined text-sm">chevron_right</span>
-            </button>
+        {/* Pagination Footer */}
+        <div className="px-6 py-4 bg-[#f8f9fa] flex items-center justify-between border-t border-[#bccac0]/10">
+          <p className="text-xs text-slate-500">Hiển thị <b className="text-[#191c1d]">{contracts.length}</b> trên <b className="text-[#191c1d]">{totalCount}</b> hợp đồng</p>
+          <div className="flex items-center gap-1">
+            <button disabled={page === 1} onClick={() => setPage(page - 1)} className="p-2 text-slate-400 hover:text-[#006948] disabled:opacity-30"><span className="material-symbols-outlined">chevron_left</span></button>
+            <button className="w-8 h-8 rounded-lg bg-[#006948] text-white text-xs font-bold">{page}</button>
+            <button disabled={page >= totalPages} onClick={() => setPage(page + 1)} className="p-2 text-slate-400 hover:text-[#006948] disabled:opacity-30"><span className="material-symbols-outlined">chevron_right</span></button>
           </div>
         </div>
       </div>

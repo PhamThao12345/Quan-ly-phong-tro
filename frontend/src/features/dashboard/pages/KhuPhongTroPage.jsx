@@ -309,27 +309,13 @@ const KhuPhongTroPage = () => {
             )}
           </tbody>
         </table>
-        {/* Pagination */}
-        <div className="px-8 py-4 bg-[#f8f9fa] flex justify-between items-center border-t border-[#f3f4f5]">
-          <p className="text-xs text-[#6d7a72] font-medium">
-            Hiển thị {rooms.length} trong tổng số {totalRoomsCnt} phòng
-          </p>
-          <div className="flex gap-1">
-            <button
-              disabled={roomPage === 1}
-              onClick={() => setRoomPage(p => p - 1)}
-              className="p-2 hover:bg-[#e1e3e4] rounded-lg transition-colors disabled:opacity-40"
-            >
-              <span className="material-symbols-outlined text-sm">chevron_left</span>
-            </button>
-            <button className="px-3 py-1 bg-[#006948] text-white rounded-lg text-xs font-bold">{roomPage}</button>
-            <button
-              disabled={roomPage === roomTotalPages || roomTotalPages === 0}
-              onClick={() => setRoomPage(p => p + 1)}
-              className="p-2 hover:bg-[#e1e3e4] rounded-lg transition-colors disabled:opacity-40"
-            >
-              <span className="material-symbols-outlined text-sm">chevron_right</span>
-            </button>
+        {/* Pagination Footer */}
+        <div className="px-6 py-4 bg-[#f8f9fa] flex items-center justify-between border-t border-[#bccac0]/10">
+          <p className="text-xs text-slate-500">Hiển thị <b className="text-[#191c1d]">{rooms.length}</b> trên <b className="text-[#191c1d]">{totalRoomsCnt}</b> phòng</p>
+          <div className="flex items-center gap-1">
+            <button disabled={roomPage === 1} onClick={() => setRoomPage(p => p - 1)} className="p-2 text-slate-400 hover:text-[#006948] disabled:opacity-30"><span className="material-symbols-outlined">chevron_left</span></button>
+            <button className="w-8 h-8 rounded-lg bg-[#006948] text-white text-xs font-bold">{roomPage}</button>
+            <button disabled={roomPage >= roomTotalPages || roomTotalPages === 0} onClick={() => setRoomPage(p => p + 1)} className="p-2 text-slate-400 hover:text-[#006948] disabled:opacity-30"><span className="material-symbols-outlined">chevron_right</span></button>
           </div>
         </div>
       </div>
