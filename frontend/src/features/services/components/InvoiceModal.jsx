@@ -92,7 +92,10 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
       // API trả về object { rooms: [], total: ... }, cần lấy trường rooms
       const allRooms = response?.rooms || (Array.isArray(response) ? response : []);
       
-      const filtered = allRooms.filter(r => Number(r.hostelId) === Number(hostelId));
+      const filtered = allRooms.filter(r => 
+        Number(r.hostelId) === Number(hostelId) && 
+        (invoiceId ? true : r.status === 'DANG_O')
+      );
       setRooms(filtered);
     } catch (e) {
       console.error('Lỗi tải phòng:', e);

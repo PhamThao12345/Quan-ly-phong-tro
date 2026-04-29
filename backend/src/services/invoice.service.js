@@ -30,6 +30,7 @@ const calculateInvoicePreview = async (roomId, month, year) => {
   });
 
   if (!room) throw { status: 404, message: 'Không tìm thấy thông tin phòng.' };
+  if (room.status !== 'DANG_O') throw { status: 400, message: 'Phòng đang trống, không thể tạo hóa đơn.' };
 
   const tenantsCount = room.tenants.length;
   const items = [];
@@ -132,6 +133,17 @@ const createInvoice = async (data) => {
   const timestamp = Math.floor(Date.now() / 1000).toString().slice(-4);
   const invoiceCode = `INV-${nextId.toString().padStart(4, '0')}-${timestamp}`;
 
+  const room = await prisma.room.findUnique({
+    where: { id: Number(roomId) },
+    include: {
+      hostel: true,
+      tenants: { where: { status: 'DANG_THUE' } }
+    }
+  });
+
+  if (!room) throw { status: 404, message: 'Phòng không tồn tại' };
+  if (room.status !== 'DANG_O') throw { status: 400, message: 'Phòng đang trống, không thể tạo hóa đơn.' };
+
   return await prisma.invoice.create({
     data: {
       invoiceCode,
@@ -140,6 +152,9 @@ const createInvoice = async (data) => {
       year: Number(year),
       totalAmount: Number(totalAmount),
       status: 'DA_TAO',
+      tenantName: room.tenants[0]?.fullName || 'N/A',
+      hostelName: room.hostel.name,
+      roomNumber: room.roomNumber,
       items: {
         create: items.map(item => ({
           serviceName: item.serviceName,
@@ -197,9 +212,9 @@ const getInvoices = async (params) => {
   return {
     data: invoices.map(inv => ({
       ...inv,
-      hostelName: inv.room.hostel.name,
-      roomNumber: inv.room.roomNumber,
-      mainTenant: inv.room.tenants[0]?.fullName || 'N/A'
+      hostelName: inv.hostelName || inv.room?.hostel?.name || 'N/A',
+      roomNumber: inv.roomNumber || inv.room?.roomNumber || 'N/A',
+      mainTenant: inv.tenantName || inv.room?.tenants[0]?.fullName || 'N/A'
     })),
     pagination: {
       total,
@@ -401,9 +416,9 @@ const getInvoiceById = async (id) => {
 
   return {
     ...inv,
-    hostelName: inv.room.hostel.name,
-    roomNumber: inv.room.roomNumber,
-    mainTenant: inv.room.tenants[0]?.fullName || 'N/A'
+    hostelName: inv.hostelName || inv.room?.hostel?.name || 'N/A',
+    roomNumber: inv.roomNumber || inv.room?.roomNumber || 'N/A',
+    mainTenant: inv.tenantName || inv.room?.tenants[0]?.fullName || 'N/A'
   };
 };
 

@@ -166,6 +166,12 @@ model Invoice {
   year            Int
   totalAmount     Float    @default(0) @map("total_amount")
   status          String   @default("DA_TAO") // DA_TAO, DA_GUI, DA_THANH_TOAN, QUA_HAN
+  
+  // Historical data fields
+  tenantName      String?  @map("tenant_name")
+  hostelName      String?  @map("hostel_name")
+  roomNumber      String?  @map("room_number")
+
   items           InvoiceItem[]
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
