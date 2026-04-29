@@ -28,6 +28,10 @@ app.use('/api/invoices', require('./routes/invoice.routes'));
 app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/activities', require('./routes/activity.routes'));
 app.use('/api/reports', require('./routes/report.routes'));
+app.use('/api/notifications', require('./routes/notification.routes'));
+
+// End of routes registration
+
 
 
 // Catch-all Error format (placeholder)

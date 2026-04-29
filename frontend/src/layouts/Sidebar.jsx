@@ -6,7 +6,7 @@ import { AuthContext } from '../contexts/AuthContext';
 const Sidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { logout } = useContext(AuthContext);
+    const { user, logout, hasPermission } = useContext(AuthContext);
     const [isServicesExpanded, setIsServicesExpanded] = useState(location.pathname.startsWith('/services'));
 
     const handleLogout = () => {
@@ -14,27 +14,19 @@ const Sidebar = () => {
         navigate('/login');
     };
 
-    const menuItems = [
-        { path: '/rooms', icon: 'door_front', label: 'Khu & Phòng trọ' },
-        { path: '/tenants', icon: 'group', label: 'Khách thuê' },
-        { path: '/contracts', icon: 'description', label: 'Hợp đồng' },
-    ];
+    const checkViewPerm = (moduleId) => hasPermission(moduleId, 'view');
 
-    const bottomItems = [
-        { path: '/invoices', icon: 'receipt_long', label: 'Hóa đơn' },
-    ];
+    const menuItems = [];
+    if (checkViewPerm('khu_phong')) menuItems.push({ path: '/rooms', icon: 'door_front', label: 'Khu & Phòng trọ' });
+    if (checkViewPerm('khach_thue')) menuItems.push({ path: '/tenants', icon: 'group', label: 'Khách thuê' });
+    if (checkViewPerm('hop_dong')) menuItems.push({ path: '/contracts', icon: 'description', label: 'Hợp đồng' });
 
-    const { user } = useContext(AuthContext);
+    const bottomItems = [];
+    if (checkViewPerm('hoa_don')) bottomItems.push({ path: '/invoices', icon: 'receipt_long', label: 'Hóa đơn' });
+    if (checkViewPerm('nguoi_dung')) bottomItems.push({ path: '/users', icon: 'badge', label: 'Người dùng' });
+    if (checkViewPerm('bao_cao')) bottomItems.push({ path: '/reports', icon: 'analytics', label: 'Báo cáo' });
 
-    const hasUserMenu = user?.role === 'CHU_TRO' || user?.permissions?.nguoi_dung?.view;
-    if (hasUserMenu) {
-        bottomItems.push({ path: '/users', icon: 'badge', label: 'Người dùng' });
-    }
-
-    const hasReportMenu = user?.role === 'CHU_TRO' || user?.role === 'MANAGER';
-    if (hasReportMenu) {
-        bottomItems.push({ path: '/reports', icon: 'analytics', label: 'Báo cáo' });
-    }
+    const showServices = checkViewPerm('chi_so_dien') || checkViewPerm('dich_vu_khac');
 
     const NavLink = ({ item }) => {
         const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
@@ -78,54 +70,60 @@ const Sidebar = () => {
                 ))}
 
                 {/* Expanded Dịch vụ module */}
-                <div className="space-y-1">
-                    <button 
-                        onClick={() => setIsServicesExpanded(!isServicesExpanded)}
-                        className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors group ${
-                            location.pathname.startsWith('/services') 
-                            ? 'text-emerald-700 font-bold bg-emerald-100/50' 
-                            : 'text-slate-700 hover:bg-emerald-100/50'
-                        }`}
-                    >
-                        <div className="flex items-center gap-3">
-                            <span 
-                                className="material-symbols-outlined text-[20px]" 
-                                style={{ fontVariationSettings: location.pathname.startsWith('/services') ? "'FILL' 1" : "'FILL' 0" }}
-                            >
-                                home_repair_service
+                {showServices && (
+                    <div className="space-y-1">
+                        <button 
+                            onClick={() => setIsServicesExpanded(!isServicesExpanded)}
+                            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors group ${
+                                location.pathname.startsWith('/services') 
+                                ? 'text-emerald-700 font-bold bg-emerald-100/50' 
+                                : 'text-slate-700 hover:bg-emerald-100/50'
+                            }`}
+                        >
+                            <div className="flex items-center gap-3">
+                                <span 
+                                    className="material-symbols-outlined text-[20px]" 
+                                    style={{ fontVariationSettings: location.pathname.startsWith('/services') ? "'FILL' 1" : "'FILL' 0" }}
+                                >
+                                    home_repair_service
+                                </span>
+                                <span className="text-[14px]">Dịch vụ</span>
+                            </div>
+                            <span className={`material-symbols-outlined text-sm transition-transform ${isServicesExpanded ? 'rotate-180' : ''}`}>
+                                expand_more
                             </span>
-                            <span className="text-[14px]">Dịch vụ</span>
-                        </div>
-                        <span className={`material-symbols-outlined text-sm transition-transform ${isServicesExpanded ? 'rotate-180' : ''}`}>
-                            expand_more
-                        </span>
-                    </button>
-                    
-                    {isServicesExpanded && (
-                        <div className="ml-9 space-y-1">
-                            <Link 
-                                to="/services/dien" 
-                                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-[13px] ${
-                                    location.pathname === '/services/dien' 
-                                    ? 'text-emerald-700 font-bold bg-emerald-100/30' 
-                                    : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-100/20'
-                                }`}
-                            >
-                                <span>Quản lý số điện</span>
-                            </Link>
-                            <Link 
-                                to="/services/khac" 
-                                className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-[13px] ${
-                                    location.pathname === '/services/khac' 
-                                    ? 'text-emerald-700 font-bold bg-emerald-100/30' 
-                                    : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-100/20'
-                                }`}
-                            >
-                                <span>Dịch vụ khác</span>
-                            </Link>
-                        </div>
-                    )}
-                </div>
+                        </button>
+                        
+                        {isServicesExpanded && (
+                            <div className="ml-9 space-y-1">
+                                {checkViewPerm('chi_so_dien') && (
+                                    <Link 
+                                        to="/services/dien" 
+                                        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-[13px] ${
+                                            location.pathname === '/services/dien' 
+                                            ? 'text-emerald-700 font-bold bg-emerald-100/30' 
+                                            : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-100/20'
+                                        }`}
+                                    >
+                                        <span>Quản lý số điện</span>
+                                    </Link>
+                                )}
+                                {checkViewPerm('dich_vu_khac') && (
+                                    <Link 
+                                        to="/services/khac" 
+                                        className={`flex items-center gap-3 px-4 py-2 rounded-lg transition-colors text-[13px] ${
+                                            location.pathname === '/services/khac' 
+                                            ? 'text-emerald-700 font-bold bg-emerald-100/30' 
+                                            : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-100/20'
+                                        }`}
+                                    >
+                                        <span>Dịch vụ khác</span>
+                                    </Link>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {bottomItems.map(item => (
                     <NavLink key={item.path} item={item} />

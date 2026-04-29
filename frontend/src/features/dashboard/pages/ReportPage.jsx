@@ -8,8 +8,17 @@ import * as XLSX from 'xlsx';
 const STORAGE_KEY = 'report_export_history';
 
 const ReportPage = () => {
-  const { user } = useContext(AuthContext);
+  const { user, hasPermission } = useContext(AuthContext);
   const navigate = useNavigate();
+
+  const canView = hasPermission('bao_cao', 'view');
+  const canExport = hasPermission('bao_cao', 'edit');
+
+  useEffect(() => {
+    if (user && !canView) {
+      navigate('/dashboard');
+    }
+  }, [user, canView, navigate]);
 
   const [filterType, setFilterType] = useState('month');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -27,10 +36,10 @@ const ReportPage = () => {
   });
 
   useEffect(() => {
-    if (!user) return;
-    if (user.role !== 'CHU_TRO' && user.role !== 'MANAGER') { navigate('/rooms'); return; }
-    fetchReport();
-  }, [user, filterType, selectedYear, selectedMonth]);
+    if (user && canView) {
+      fetchReport();
+    }
+  }, [user, canView, filterType, selectedYear, selectedMonth]);
 
   const fetchReport = async () => {
     setLoading(true);
@@ -111,10 +120,12 @@ const ReportPage = () => {
           <h2 className="text-3xl font-headline font-extrabold text-[#191c1d] tracking-tight">Báo cáo</h2>
           <p className="text-sm text-[#3d4a42] mt-1">Phân tích chuyên sâu về tình hình kinh doanh của bạn.</p>
         </div>
-        <button onClick={exportToExcel} className="flex items-center gap-2 bg-[#006948] text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-[#006948]/20 hover:opacity-90 transition-all">
-          <span className="material-symbols-outlined text-[20px]">file_export</span>
-          Xuất báo cáo
-        </button>
+        {canExport && (
+          <button onClick={exportToExcel} className="flex items-center gap-2 bg-[#006948] text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-[#006948]/20 hover:opacity-90 transition-all">
+            <span className="material-symbols-outlined text-[20px]">file_export</span>
+            Xuất báo cáo
+          </button>
+        )}
       </div>
 
       {/* Filters */}
@@ -165,20 +176,33 @@ const ReportPage = () => {
             </div>
             <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-emerald-600"></div><span className="text-xs text-[#3d4a42]">Doanh thu (VNĐ)</span></div>
           </div>
-          <div className="flex items-end justify-between h-56 gap-3 px-2">
+          <div className="flex items-end justify-between h-56 gap-4 px-2 mt-4">
             {reportData.revenue12Months.map((amt, idx) => {
-              const h = amt === 0 ? 0 : Math.max(5, (amt / maxRevenue) * 100);
+              const h = maxRevenue > 0 ? (amt / maxRevenue) * 100 : 0;
               return (
-                <div key={idx} className="flex flex-col items-center gap-2 w-full group relative">
-                  <div className="absolute -top-7 hidden group-hover:block bg-[#191c1d] text-white text-[10px] py-1 px-2 rounded whitespace-nowrap z-10">
+                <div key={idx} className="flex flex-col items-center gap-2 flex-1 group relative h-full">
+                  <div className="absolute -top-7 hidden group-hover:block bg-[#191c1d] text-white text-[10px] py-1 px-2 rounded whitespace-nowrap z-10 shadow-lg">
                     {amt.toLocaleString('vi-VN')}đ
                   </div>
-                  <div className="w-full bg-emerald-600 rounded-t-lg hover:bg-emerald-700 transition-colors" style={{ height: `${h}%`, minHeight: amt > 0 ? '6px' : '0' }}></div>
-                  <span className="text-[10px] font-bold text-[#3d4a42]">T{idx + 1}</span>
+                  {/* Track background */}
+                  <div className="w-full bg-slate-50 rounded-lg absolute bottom-6 top-0 -z-0"></div>
+                  {/* Actual bar */}
+                  <div 
+                    className="w-full bg-emerald-600 rounded-t-lg hover:bg-emerald-500 transition-all duration-300 relative z-1" 
+                    style={{ 
+                      height: `${Math.max(0, (h * 0.85))}%`, 
+                      minHeight: amt > 0 ? '4px' : '0',
+                      marginTop: 'auto',
+                      marginBottom: '24px'
+                    }}
+                  ></div>
+                  <span className="text-[10px] font-bold text-[#3d4a42] absolute bottom-0">T{idx + 1}</span>
+
                 </div>
               );
             })}
           </div>
+
         </div>
 
         {/* Right Column */}

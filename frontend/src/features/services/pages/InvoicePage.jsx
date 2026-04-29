@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import * as invoiceApi from '../../../services/invoice.service';
 import * as hostelApi from '../../../services/hostel.service';
 import InvoiceModal from '../components/InvoiceModal';
@@ -31,9 +32,18 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, loading, invoiceCode }
 };
 
 const InvoicePage = () => {
-  const { user } = useContext(AuthContext);
-  const isOwner = user?.role === 'CHU_TRO';
-  const hasEditPermission = isOwner || user?.permissions?.hoa_don?.edit;
+  const { user, hasPermission } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const canView = hasPermission('hoa_don', 'view');
+  const canEdit = hasPermission('hoa_don', 'edit');
+  const canDelete = hasPermission('hoa_don', 'delete');
+
+  useEffect(() => {
+    if (user && !canView) {
+      navigate('/dashboard');
+    }
+  }, [user, canView, navigate]);
 
   const [invoices, setInvoices] = useState([]);
   const [hostels, setHostels] = useState([]);
@@ -181,7 +191,7 @@ const InvoicePage = () => {
           <p className="text-[#3d4a42] font-body text-sm">Quản lý hóa đơn dịch vụ và thanh toán hàng tháng</p>
         </div>
         <div className="flex gap-3">
-          {hasEditPermission && (
+          {canEdit && (
             <button 
               onClick={() => { setEditingId(null); setModalMode('add'); setIsModalOpen(true); }}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#006948] text-white font-bold rounded-lg hover:bg-[#00855d] transition-all font-body text-sm shadow-md shadow-[#006948]/10 whitespace-nowrap"
@@ -307,8 +317,8 @@ const InvoicePage = () => {
                   <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-center gap-2 text-slate-400">
                       <button onClick={() => { setEditingId(inv.id); setModalMode('view'); setIsModalOpen(true); }} className="p-1.5 hover:text-[#006948] hover:bg-emerald-50 rounded-lg transition-all" title="Xem chi tiết"><span className="material-symbols-outlined text-xl">visibility</span></button>
-                      {hasEditPermission && <button onClick={() => { setEditingId(inv.id); setModalMode('edit'); setIsModalOpen(true); }} className="p-1.5 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Chỉnh sửa"><span className="material-symbols-outlined text-xl">edit</span></button>}
-                      {hasEditPermission && <button onClick={() => { setDeletingInvoice(inv); setIsDeleteModalOpen(true); }} className="p-1.5 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Xóa"><span className="material-symbols-outlined text-xl">delete</span></button>}
+                      {canEdit && <button onClick={() => { setEditingId(inv.id); setModalMode('edit'); setIsModalOpen(true); }} className="p-1.5 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all" title="Chỉnh sửa"><span className="material-symbols-outlined text-xl">edit</span></button>}
+                      {canDelete && <button onClick={() => { setDeletingInvoice(inv); setIsDeleteModalOpen(true); }} className="p-1.5 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all" title="Xóa"><span className="material-symbols-outlined text-xl">delete</span></button>}
                     </div>
                   </td>
                 </tr>

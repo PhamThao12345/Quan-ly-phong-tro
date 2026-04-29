@@ -2,21 +2,19 @@ const express = require('express');
 const router = express.Router();
 const serviceController = require('../controllers/service.controller');
 const { verifyAuthTask } = require('../middlewares/auth.middleware');
-const { requireRole } = require('../middlewares/role.middleware');
+const { checkPermission } = require('../middlewares/role.middleware');
 
 // Tất cả các route yêu cầu đăng nhập
 router.use(verifyAuthTask);
 
-router.get('/', serviceController.getAllServices);
-router.get('/:id', serviceController.getServiceById);
+router.get('/', checkPermission('dich_vu_khac', 'view'), serviceController.getAllServices);
+router.get('/:id', checkPermission('dich_vu_khac', 'view'), serviceController.getServiceById);
 
-// Chỉ Chủ trọ được thêm, sửa, xóa dịch vụ định mức
-router.post('/', requireRole('CHU_TRO'), serviceController.createService);
-router.put('/:id', requireRole('CHU_TRO'), serviceController.updateService);
-router.delete('/:id', requireRole('CHU_TRO'), serviceController.deleteService);
+router.post('/', checkPermission('dich_vu_khac', 'edit'), serviceController.createService);
+router.put('/:id', checkPermission('dich_vu_khac', 'edit'), serviceController.updateService);
+router.delete('/:id', checkPermission('dich_vu_khac', 'delete'), serviceController.deleteService);
 
-// Chủ trọ và Nhân viên đều có thể gán/gỡ dịch vụ cho phòng
-router.post('/apply', serviceController.applyToRooms);
-router.post('/remove', serviceController.removeFromRoom);
+router.post('/apply', checkPermission('dich_vu_khac', 'edit'), serviceController.applyToRooms);
+router.post('/remove', checkPermission('dich_vu_khac', 'edit'), serviceController.removeFromRoom);
 
 module.exports = router;

@@ -39,8 +39,14 @@ export const AuthProvider = ({ children }) => {
     navigate('/login');
   };
 
+  const hasPermission = (moduleId, action) => {
+    if (!user) return false;
+    if (user.role === 'CHU_TRO') return true;
+    return user.permissions?.[moduleId]?.[action] === true;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loginSuccess, logout }}>
+    <AuthContext.Provider value={{ user, loginSuccess, logout, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );

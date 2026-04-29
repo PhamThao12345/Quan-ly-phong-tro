@@ -2,24 +2,24 @@ const express = require('express');
 const router = express.Router();
 const contractController = require('../controllers/contract.controller');
 const { verifyAuthTask } = require('../middlewares/auth.middleware');
-const { requireRole } = require('../middlewares/role.middleware');
+const { checkPermission } = require('../middlewares/role.middleware');
 
 router.use(verifyAuthTask);
 
 // Thống kê
-router.get('/stats', contractController.getStats);
+router.get('/stats', checkPermission('hop_dong', 'view'), contractController.getStats);
 
 // Export
-router.get('/export-bulk', contractController.exportBulk);
-router.get('/:id/export', contractController.exportWord);
+router.get('/export-bulk', checkPermission('hop_dong', 'view'), contractController.exportBulk);
+router.get('/:id/export', checkPermission('hop_dong', 'view'), contractController.exportWord);
 
 // CRUD & Action
-router.get('/', contractController.getAllContracts);
-router.get('/:id', contractController.getContractById);
-router.post('/', requireRole('CHU_TRO'), contractController.createContract);
-router.put('/:id', requireRole('CHU_TRO'), contractController.updateContract);
-router.post('/:id/renew', requireRole('CHU_TRO'), contractController.renewContract);
-router.post('/:id/terminate', requireRole('CHU_TRO'), contractController.terminateContract);
-router.delete('/:id', requireRole('CHU_TRO'), contractController.deleteContract);
+router.get('/', checkPermission('hop_dong', 'view'), contractController.getAllContracts);
+router.get('/:id', checkPermission('hop_dong', 'view'), contractController.getContractById);
+router.post('/', checkPermission('hop_dong', 'edit'), contractController.createContract);
+router.put('/:id', checkPermission('hop_dong', 'edit'), contractController.updateContract);
+router.post('/:id/renew', checkPermission('hop_dong', 'edit'), contractController.renewContract);
+router.post('/:id/terminate', checkPermission('hop_dong', 'edit'), contractController.terminateContract);
+router.delete('/:id', checkPermission('hop_dong', 'delete'), contractController.deleteContract);
 
 module.exports = router;

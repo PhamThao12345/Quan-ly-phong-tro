@@ -4,10 +4,20 @@ import * as electricityApi from '../../../services/electricity.service';
 import * as serviceApi from '../../../services/service.service';
 import * as hostelApi from '../../../services/hostel.service';
 
+import { useNavigate } from 'react-router-dom';
+
 const QuanLyDienPage = () => {
-  const { user } = useContext(AuthContext);
-  const isOwner = user?.role === 'CHU_TRO';
-  const hasEditPermission = isOwner || user?.permissions?.chi_so_dien?.edit;
+  const { user, hasPermission } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const canView = hasPermission('chi_so_dien', 'view');
+  const canEdit = hasPermission('chi_so_dien', 'edit');
+
+  useEffect(() => {
+    if (user && !canView) {
+      navigate('/dashboard');
+    }
+  }, [user, canView, navigate]);
 
   const [meters, setMeters] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -151,7 +161,7 @@ const QuanLyDienPage = () => {
             </div>
             <span className="material-symbols-outlined text-[#006948] text-xl">calendar_today</span>
           </div>
-          {hasEditPermission && (
+          {canEdit && (
             <button onClick={handleSaveAll} disabled={isSaving} className="bg-[#006948] text-white px-6 py-3 rounded-lg font-bold text-sm shadow-md shadow-[#006948]/10 hover:bg-[#004d35] transition-all flex items-center gap-2">
               <span className="material-symbols-outlined text-lg">save</span>
               {isSaving ? 'Đang lưu...' : 'Lưu dữ liệu'}
@@ -255,7 +265,7 @@ const QuanLyDienPage = () => {
                   <td className="px-8 py-4 font-manrope font-bold text-[#191c1d] text-center">{m.roomNumber}</td>
                   <td className="px-8 py-4 text-sm text-[#3d4a42] text-center">{m.previousIndex.toLocaleString()}</td>
                   <td className="px-8 py-4 text-center">
-                    <input disabled={!hasEditPermission} value={m.currentIndex === 0 ? '' : m.currentIndex} onChange={(e) => handleIndexChange(m.roomId, e.target.value)} className="w-24 bg-[#f3f4f5] border-none rounded-lg px-2 py-1 text-sm font-bold text-center focus:ring-2 focus:ring-[#006948]/20 disabled:opacity-50 disabled:cursor-not-allowed" type="number" />
+                    <input disabled={!canEdit} value={m.currentIndex === 0 ? '' : m.currentIndex} onChange={(e) => handleIndexChange(m.roomId, e.target.value)} className="w-24 bg-[#f3f4f5] border-none rounded-lg px-2 py-1 text-sm font-bold text-center focus:ring-2 focus:ring-[#006948]/20 disabled:opacity-50 disabled:cursor-not-allowed" type="number" />
                   </td>
                   <td className="px-8 py-4 font-bold text-[#006948] text-sm text-center">{m.consumption.toLocaleString()}</td>
                   <td className="px-8 py-4 font-bold text-[#191c1d] text-sm text-right">{m.amount.toLocaleString()}đ</td>

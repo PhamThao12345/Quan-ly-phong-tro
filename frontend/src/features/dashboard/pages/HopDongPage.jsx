@@ -4,10 +4,21 @@ import * as contractService from '../../../services/contract.service';
 import * as hostelService from '../../../services/hostel.service';
 import * as roomService from '../../../services/room.service';
 
+import { useNavigate } from 'react-router-dom';
+
 const HopDongPage = () => {
-  const { user } = useContext(AuthContext);
-  const isOwner = user?.role === 'CHU_TRO';
-  const hasEditPermission = isOwner || user?.permissions?.hop_dong?.edit;
+  const { user, hasPermission } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const canView = hasPermission('hop_dong', 'view');
+  const canEdit = hasPermission('hop_dong', 'edit');
+  const canDelete = hasPermission('hop_dong', 'delete');
+
+  useEffect(() => {
+    if (user && !canView) {
+      navigate('/dashboard');
+    }
+  }, [user, canView, navigate]);
   
   const [contracts, setContracts] = useState([]);
   const [page, setPage] = useState(1);
@@ -306,7 +317,7 @@ Mọi hành vi vi phạm pháp luật hoặc nội quy nghiêm trọng sẽ dẫ
           <h1 className="text-4xl font-['Manrope'] font-[800] text-[#191c1d] tracking-tight">Hợp đồng</h1>
           <p className="text-[#6d7a72] mt-1 text-sm">Quản lý các cam kết và thỏa thuận thuê phòng</p>
         </div>
-        {hasEditPermission && (
+        {canEdit && (
           <button 
             onClick={() => {
               setModalType('ADD');
@@ -464,8 +475,8 @@ Mọi hành vi vi phạm pháp luật hoặc nội quy nghiêm trọng sẽ dẫ
                   <td className="px-8 py-4 text-right">
                     <div className="flex justify-end gap-3 text-slate-400 group-hover:text-slate-600">
                       <button onClick={() => { setModalType('VIEW'); setModalData(contract); }} className="hover:text-[#006948] transition-colors"><span className="material-symbols-outlined text-lg">visibility</span></button>
-                      <button onClick={() => openEditModal(contract)} className="hover:text-blue-500 transition-colors"><span className="material-symbols-outlined text-lg">edit</span></button>
-                      {hasEditPermission && <button onClick={() => { setModalType('DELETE'); setModalData(contract); }} className="hover:text-red-500 transition-colors"><span className="material-symbols-outlined text-lg">delete</span></button>}
+                      {canEdit && <button onClick={() => openEditModal(contract)} className="hover:text-blue-500 transition-colors"><span className="material-symbols-outlined text-lg">edit</span></button>}
+                      {canDelete && <button onClick={() => { setModalType('DELETE'); setModalData(contract); }} className="hover:text-red-500 transition-colors"><span className="material-symbols-outlined text-lg">delete</span></button>}
                     </div>
                   </td>
                 </tr>

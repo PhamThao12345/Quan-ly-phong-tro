@@ -4,10 +4,21 @@ import * as serviceApi from '../../../services/service.service';
 import * as hostelApi from '../../../services/hostel.service';
 import * as roomApi from '../../../services/room.service';
 
+import { useNavigate } from 'react-router-dom';
+
 const DichVuKhacPage = () => {
-  const { user } = useContext(AuthContext);
-  const isOwner = user?.role === 'CHU_TRO';
-  const hasEditPermission = isOwner || user?.permissions?.dich_vu_khac?.edit;
+  const { user, hasPermission } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const canView = hasPermission('dich_vu_khac', 'view');
+  const canEdit = hasPermission('dich_vu_khac', 'edit');
+  const canDelete = hasPermission('dich_vu_khac', 'delete');
+
+  useEffect(() => {
+    if (user && !canView) {
+      navigate('/dashboard');
+    }
+  }, [user, canView, navigate]);
   
   const [services, setServices] = useState([]);
   const [hostels, setHostels] = useState([]);
@@ -149,7 +160,7 @@ const DichVuKhacPage = () => {
             Các thay đổi sẽ được áp dụng trực tiếp vào hóa đơn của kỳ kế tiếp.
           </p>
         </div>
-        {hasEditPermission && (
+        {canEdit && (
           <button 
             onClick={() => {
               setModalType('ADD');
@@ -174,27 +185,27 @@ const DichVuKhacPage = () => {
                 </span>
               </div>
               <div className="flex gap-1">
-                {hasEditPermission && (
-                  <>
-                    <button 
-                      onClick={() => {
-                        setModalType('EDIT');
-                        setModalData(svc);
-                      }}
-                      className="text-[#6d7a72] hover:text-[#006948] transition-colors p-1"
-                    >
-                      <span className="material-symbols-outlined text-xl">edit</span>
-                    </button>
-                    <button 
-                      onClick={() => {
-                        setModalType('DELETE');
-                        setModalData(svc);
-                      }}
-                      className="text-[#6d7a72] hover:text-red-600 transition-colors p-1"
-                    >
-                      <span className="material-symbols-outlined text-xl">delete</span>
-                    </button>
-                  </>
+                {canEdit && (
+                  <button 
+                    onClick={() => {
+                      setModalType('EDIT');
+                      setModalData(svc);
+                    }}
+                    className="text-[#6d7a72] hover:text-[#006948] transition-colors p-1"
+                  >
+                    <span className="material-symbols-outlined text-xl">edit</span>
+                  </button>
+                )}
+                {canDelete && (
+                  <button 
+                    onClick={() => {
+                      setModalType('DELETE');
+                      setModalData(svc);
+                    }}
+                    className="text-[#6d7a72] hover:text-red-600 transition-colors p-1"
+                  >
+                    <span className="material-symbols-outlined text-xl">delete</span>
+                  </button>
                 )}
               </div>
             </div>
@@ -212,18 +223,20 @@ const DichVuKhacPage = () => {
             </div>
             
             {/* Apply Button */}
-            <button 
-              onClick={() => {
-                setModalType('APPLY');
-                setModalData({
-                  ...svc,
-                  appliedRoomIds: svc.rooms.map(r => r.roomId)
-                });
-              }}
-              className="mt-6 w-full py-2 bg-emerald-50 text-[#006948] text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-emerald-100 transition-colors"
-            >
-              Áp dụng cho {svc.rooms.length} phòng
-            </button>
+            {canEdit && (
+              <button 
+                onClick={() => {
+                  setModalType('APPLY');
+                  setModalData({
+                    ...svc,
+                    appliedRoomIds: svc.rooms.map(r => r.roomId)
+                  });
+                }}
+                className="mt-6 w-full py-2 bg-emerald-50 text-[#006948] text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-emerald-100 transition-colors"
+              >
+                Áp dụng cho {svc.rooms.length} phòng
+              </button>
+            )}
           </div>
         ))}
       </div>

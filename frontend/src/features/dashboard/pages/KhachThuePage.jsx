@@ -4,10 +4,21 @@ import * as tenantService from '../../../services/tenant.service';
 import * as hostelService from '../../../services/hostel.service';
 import * as roomService from '../../../services/room.service';
 
+import { useNavigate } from 'react-router-dom';
+
 const KhachThuePage = () => {
-  const { user } = useContext(AuthContext);
-  const isOwner = user?.role === 'CHU_TRO';
-  const hasEditPermission = isOwner || user?.permissions?.khach_thue?.edit;
+  const { user, hasPermission } = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const canView = hasPermission('khach_thue', 'view');
+  const canEdit = hasPermission('khach_thue', 'edit');
+  const canDelete = hasPermission('khach_thue', 'delete');
+
+  useEffect(() => {
+    if (user && !canView) {
+      navigate('/dashboard');
+    }
+  }, [user, canView, navigate]);
   const [tenants, setTenants] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -91,7 +102,7 @@ const KhachThuePage = () => {
         <h2 className="text-3xl font-['Manrope'] font-[800] text-[#191c1d] tracking-tight">Khách thuê</h2>
         <p className="text-slate-500 text-sm mt-1">Quản lý thông tin cư dân và lịch sử thuê phòng tại T's House.</p>
       </div>
-      {hasEditPermission && <button onClick={openAdd} className="bg-[#006948] text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-md shadow-emerald-900/10 hover:bg-emerald-700 transition-all">
+      {canEdit && <button onClick={openAdd} className="bg-[#006948] text-white px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 shadow-md shadow-emerald-900/10 hover:bg-emerald-700 transition-all">
         <span className="material-symbols-outlined text-lg">add</span> Thêm khách thuê mới
       </button>}
     </div>
@@ -143,7 +154,7 @@ const KhachThuePage = () => {
             <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} placeholder="Tìm kiếm khách thuê..." className="w-full pl-10 pr-4 py-1.5 bg-[#f8f9fa] border border-[#bccac0]/30 rounded-lg text-sm focus:ring-2 focus:ring-[#006948]/20 outline-none"/>
           </div>
           <button onClick={()=>setShowFilter(!showFilter)} className="p-2 text-[#6d7a72] hover:bg-[#f8f9fa] rounded-lg"><span className="material-symbols-outlined">filter_list</span></button>
-          {hasEditPermission && <button onClick={handleExport} className="p-2 text-[#6d7a72] hover:bg-[#f8f9fa] rounded-lg"><span className="material-symbols-outlined">download</span></button>}
+          {canEdit && <button onClick={handleExport} className="p-2 text-[#6d7a72] hover:bg-[#f8f9fa] rounded-lg"><span className="material-symbols-outlined">download</span></button>}
         </div>
       </div>
       {/* Filter Row */}
@@ -192,8 +203,8 @@ const KhachThuePage = () => {
                 <td className="px-6 py-4 text-right">
                   <div className="flex justify-end gap-2 text-slate-500">
                     <button onClick={()=>openView(t)} className="hover:text-[#006948] transition-colors"><span className="material-symbols-outlined text-lg">visibility</span></button>
-                    {hasEditPermission && <button onClick={()=>openEdit(t)} className="hover:text-[#006948] transition-colors"><span className="material-symbols-outlined text-lg">edit</span></button>}
-                    {hasEditPermission && <button onClick={()=>openDelete(t)} className="hover:text-red-500 transition-colors"><span className="material-symbols-outlined text-lg">delete</span></button>}
+                    {canEdit && <button onClick={()=>openEdit(t)} className="hover:text-[#006948] transition-colors"><span className="material-symbols-outlined text-lg">edit</span></button>}
+                    {canDelete && <button onClick={()=>openDelete(t)} className="hover:text-red-500 transition-colors"><span className="material-symbols-outlined text-lg">delete</span></button>}
                   </div>
                 </td>
               </tr>

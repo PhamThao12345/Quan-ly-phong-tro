@@ -6,7 +6,7 @@ import ActivityHistoryDrawer from '../components/ActivityHistoryDrawer';
 import { useNavigate } from 'react-router-dom';
 
 const UserPage = () => {
-  const { user } = useContext(AuthContext);
+  const { user, hasPermission } = useContext(AuthContext);
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [filters, setFilters] = useState({ search: '' });
@@ -28,15 +28,17 @@ const UserPage = () => {
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
+  const canView = hasPermission('nguoi_dung', 'view');
+  const canEdit = hasPermission('nguoi_dung', 'edit');
+  const canDelete = hasPermission('nguoi_dung', 'delete');
+
   useEffect(() => {
-    if (!user) return; // Đợi user load từ context
-    const hasAccess = user.role === 'CHU_TRO' || user.permissions?.nguoi_dung?.view;
-    if (!hasAccess) {
+    if (user && !canView) {
       navigate('/dashboard'); // Chặn truy cập nếu không có quyền
       return;
     }
-    fetchUsers();
-  }, [user]);
+    if (user) fetchUsers();
+  }, [user, canView]);
 
   const fetchUsers = async () => {
     try {
@@ -109,7 +111,7 @@ const UserPage = () => {
           <p className="text-[#3d4a42] font-body text-sm">Quản lý đội ngũ và phân quyền hệ thống</p>
         </div>
         <div className="flex gap-3">
-          {(user?.role === 'CHU_TRO' || user?.role === 'MANAGER') && (
+          {canView && (
             <button 
               onClick={() => setIsDrawerOpen(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#e7e8e9] text-[#006948] font-medium rounded-lg hover:bg-emerald-50 transition-all font-body text-sm"
@@ -118,13 +120,15 @@ const UserPage = () => {
               Lịch sử hoạt động
             </button>
           )}
-          <button 
-            onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
-            className="flex items-center gap-2 px-5 py-2.5 bg-[#006948] text-white font-bold rounded-lg hover:bg-[#00855d] transition-all font-body text-sm shadow-md shadow-[#006948]/10 whitespace-nowrap"
-          >
-            <span className="material-symbols-outlined text-sm">add</span>
-            Thêm người dùng
-          </button>
+          {canEdit && (
+            <button 
+              onClick={() => { setEditingUser(null); setIsModalOpen(true); }}
+              className="flex items-center gap-2 px-5 py-2.5 bg-[#006948] text-white font-bold rounded-lg hover:bg-[#00855d] transition-all font-body text-sm shadow-md shadow-[#006948]/10 whitespace-nowrap"
+            >
+              <span className="material-symbols-outlined text-sm">add</span>
+              Thêm người dùng
+            </button>
+          )}
         </div>
       </div>
 
@@ -243,20 +247,26 @@ const UserPage = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right">
                     <div className="flex gap-2 justify-end text-slate-500">
+                      <button 
+                        onClick={() => { setEditingUser({...u, isView: true}); setIsModalOpen(true); }}
+                        className="hover:text-[#006948] transition-colors" title="Xem chi tiết"
+                      ><span className="material-symbols-outlined text-lg">visibility</span></button>
+                      
+                      {/* Chỉ cho phép sửa/xóa nếu có quyền và không phải là sửa chính CHU_TRO bởi người khác */}
                       {(user?.role === 'CHU_TRO' || u.role !== 'CHU_TRO') && (
                         <>
-                          <button 
-                            onClick={() => { setEditingUser({...u, isView: true}); setIsModalOpen(true); }}
-                            className="hover:text-[#006948] transition-colors" title="Xem chi tiết"
-                          ><span className="material-symbols-outlined text-lg">visibility</span></button>
-                          <button 
-                            onClick={() => { setEditingUser({...u, isView: false}); setIsModalOpen(true); }}
-                            className="hover:text-[#006948] transition-colors" title="Chỉnh sửa"
-                          ><span className="material-symbols-outlined text-lg">edit</span></button>
-                          <button 
-                            onClick={() => { setDeletingUser(u); setIsDeleteModalOpen(true); }}
-                            className="hover:text-red-500 transition-colors" title="Xóa"
-                          ><span className="material-symbols-outlined text-lg">delete</span></button>
+                          {canEdit && (
+                            <button 
+                              onClick={() => { setEditingUser({...u, isView: false}); setIsModalOpen(true); }}
+                              className="hover:text-[#006948] transition-colors" title="Chỉnh sửa"
+                            ><span className="material-symbols-outlined text-lg">edit</span></button>
+                          )}
+                          {canDelete && (
+                            <button 
+                              onClick={() => { setDeletingUser(u); setIsDeleteModalOpen(true); }}
+                              className="hover:text-red-500 transition-colors" title="Xóa"
+                            ><span className="material-symbols-outlined text-lg">delete</span></button>
+                          )}
                         </>
                       )}
                     </div>

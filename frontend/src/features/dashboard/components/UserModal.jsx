@@ -45,8 +45,12 @@ const UserModal = ({ isOpen, onClose, onSuccess, initialData, isView }) => {
       });
       if (initialData.permissions) {
         try {
-          setPermissions(JSON.parse(initialData.permissions));
+          const perms = typeof initialData.permissions === 'string' 
+            ? JSON.parse(initialData.permissions) 
+            : initialData.permissions;
+          setPermissions(perms || {});
         } catch (e) {
+          console.error('Error parsing permissions:', e);
           setPermissions({});
         }
       }

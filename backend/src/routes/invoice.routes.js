@@ -2,16 +2,16 @@ const express = require('express');
 const router = express.Router();
 const invoiceController = require('../controllers/invoice.controller');
 const { verifyAuthTask } = require('../middlewares/auth.middleware');
-const { requireRole } = require('../middlewares/role.middleware');
+const { checkPermission } = require('../middlewares/role.middleware');
 
 router.use(verifyAuthTask);
 
-router.get('/', invoiceController.getInvoices);
-router.get('/:id', invoiceController.getInvoiceById);
-router.post('/calculate-preview', invoiceController.calculatePreview);
-router.post('/', requireRole(['CHU_TRO', 'NHAN_VIEN_QUAN_LY']), invoiceController.createInvoice);
-router.put('/:id', requireRole(['CHU_TRO', 'NHAN_VIEN_QUAN_LY']), invoiceController.updateInvoice);
-router.delete('/:id', requireRole(['CHU_TRO', 'NHAN_VIEN_QUAN_LY']), invoiceController.deleteInvoice);
-router.post('/:id/send-email', requireRole(['CHU_TRO', 'NHAN_VIEN_QUAN_LY']), invoiceController.sendEmail);
+router.get('/', checkPermission('hoa_don', 'view'), invoiceController.getInvoices);
+router.get('/:id', checkPermission('hoa_don', 'view'), invoiceController.getInvoiceById);
+router.post('/calculate-preview', checkPermission('hoa_don', 'view'), invoiceController.calculatePreview);
+router.post('/', checkPermission('hoa_don', 'edit'), invoiceController.createInvoice);
+router.put('/:id', checkPermission('hoa_don', 'edit'), invoiceController.updateInvoice);
+router.delete('/:id', checkPermission('hoa_don', 'delete'), invoiceController.deleteInvoice);
+router.post('/:id/send-email', checkPermission('hoa_don', 'edit'), invoiceController.sendEmail);
 
 module.exports = router;

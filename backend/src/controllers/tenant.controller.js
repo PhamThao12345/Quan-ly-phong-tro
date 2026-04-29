@@ -1,5 +1,7 @@
 const tenantService = require('../services/tenant.service');
 const activityService = require('../services/activity.service');
+const notificationService = require('../services/notification.service');
+
 
 const getAllTenants = async (req, res) => {
   try {
@@ -38,7 +40,13 @@ const createTenant = async (req, res) => {
     }
     const tenant = await tenantService.createTenant({ fullName, cccd, phoneNumber, email, gender, dateOfBirth, address, hometown, roomId });
     await activityService.logActivity(req.user.id, `Đã thêm khách thuê mới: ${tenant.fullName}`, 'KHACH_THUE');
+    await notificationService.createNotification({
+      title: 'Khách thuê mới',
+      message: `Khách thuê "${tenant.fullName}" vừa được thêm vào hệ thống.`,
+      type: 'SUCCESS'
+    });
     res.status(201).json({ status: 'success', data: tenant });
+
   } catch (error) {
     res.status(error.status || 500).json({ status: 'error', message: error.message });
   }
@@ -54,7 +62,13 @@ const updateTenant = async (req, res) => {
       fullName, cccd, phoneNumber, email, gender, dateOfBirth, address, hometown, roomId, status, residencyStatus
     });
     await activityService.logActivity(req.user.id, `Đã cập nhật thông tin khách thuê: ${tenant.fullName}`, 'KHACH_THUE');
+    await notificationService.createNotification({
+      title: 'Cập nhật khách thuê',
+      message: `Thông tin khách thuê "${tenant.fullName}" vừa được chỉnh sửa.`,
+      type: 'INFO'
+    });
     res.status(200).json({ status: 'success', data: tenant });
+
   } catch (error) {
     res.status(error.status || 500).json({ status: 'error', message: error.message });
   }

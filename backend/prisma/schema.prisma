@@ -198,3 +198,16 @@ model ActivityLog {
 
   @@map("activity_logs")
 }
+
+model Notification {
+  id          Int      @id @default(autoincrement()) @map("notification_id")
+  title       String
+  message     String
+  type        String   @default("INFO") // INFO, SUCCESS, WARNING, ERROR
+  isRead      Boolean  @default(false) @map("is_read")
+  userId      Int?     @map("user_id") // Null means global or for all managers
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("notifications")
+}
+

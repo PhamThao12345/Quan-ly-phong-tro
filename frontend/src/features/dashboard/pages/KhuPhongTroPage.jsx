@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import * as hostelService from '../../../services/hostel.service';
 import * as roomService from '../../../services/room.service';
 
@@ -38,9 +39,18 @@ const StatusBadge = ({ type }) => {
 };
 
 const KhuPhongTroPage = () => {
-  const { user } = useContext(AuthContext);
-  const isOwner = user?.role === 'CHU_TRO';
-  const hasEditPermission = isOwner || user?.permissions?.khu_phong?.edit;
+  const { user, hasPermission } = useContext(AuthContext);
+  const navigate = useNavigate();
+  
+  const canView = hasPermission('khu_phong', 'view');
+  const canEdit = hasPermission('khu_phong', 'edit');
+  const canDelete = hasPermission('khu_phong', 'delete');
+
+  useEffect(() => {
+    if (user && !canView) {
+      navigate('/dashboard');
+    }
+  }, [user, canView, navigate]);
 
   const [hostels, setHostels] = useState([]);
   const [hostelSearch, setHostelSearch] = useState('');
@@ -156,7 +166,7 @@ const KhuPhongTroPage = () => {
                 className="h-10 pl-9 pr-4 bg-[#f8f9fa] border border-[#e1e3e4] rounded-xl text-sm focus:outline-none focus:border-[#006948] transition-all w-48"
               />
             </div>
-            {hasEditPermission && (
+            {canEdit && (
               <button
                 onClick={() => { setModalType('HOSTEL'); setModalAction('ADD'); setModalData({ name: '', address: '', city: 'Hồ Chí Minh', district: '', status: 'HOAT_DONG' }); }}
                 className="bg-[#006948] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-md shadow-emerald-900/10 whitespace-nowrap"
@@ -190,12 +200,12 @@ const KhuPhongTroPage = () => {
                     <button onClick={() => { setModalType('HOSTEL'); setModalAction('VIEW'); setModalData(h); }} className="hover:text-[#006948] transition-colors p-1">
                       <span className="material-symbols-outlined text-[20px]">visibility</span>
                     </button>
-                    {hasEditPermission && (
+                    {canEdit && (
                       <button onClick={() => { setModalType('HOSTEL'); setModalAction('EDIT'); setModalData(h); }} className="hover:text-[#006948] transition-colors p-1">
                         <span className="material-symbols-outlined text-[20px]">edit</span>
                       </button>
                     )}
-                    {hasEditPermission && (
+                    {canDelete && (
                       <button onClick={() => { setModalType('DELETE'); setModalData({ id: h.id, target: 'HOSTEL', name: h.name }); }} className="hover:text-red-500 transition-colors p-1">
                         <span className="material-symbols-outlined text-[20px]">delete</span>
                       </button>
@@ -233,7 +243,7 @@ const KhuPhongTroPage = () => {
                 className="h-10 pl-9 pr-4 bg-[#f8f9fa] border border-[#e1e3e4] rounded-xl text-sm focus:outline-none focus:border-[#006948] transition-all w-48"
               />
             </div>
-            {hasEditPermission && (
+            {canEdit && (
               <button
                 onClick={() => { setModalType('ROOM'); setModalAction('ADD'); setModalData({ roomNumber: '', floor: '', price: '', electricityIndex: 0, status: 'TRONG', hostelId: hostels[0]?.id || '' }); }}
                 className="bg-[#006948] text-white px-5 py-2.5 rounded-xl font-bold text-sm flex items-center gap-2 hover:bg-emerald-700 transition-all shadow-md shadow-emerald-900/10 whitespace-nowrap"
@@ -269,12 +279,12 @@ const KhuPhongTroPage = () => {
                     <button onClick={() => { setModalType('ROOM'); setModalAction('VIEW'); setModalData(room); }} className="hover:text-[#006948] transition-colors p-1">
                       <span className="material-symbols-outlined text-[20px]">visibility</span>
                     </button>
-                    {hasEditPermission && (
+                    {canEdit && (
                       <button onClick={() => { setModalType('ROOM'); setModalAction('EDIT'); setModalData(room); }} className="hover:text-[#006948] transition-colors p-1">
                         <span className="material-symbols-outlined text-[20px]">edit</span>
                       </button>
                     )}
-                    {hasEditPermission && (
+                    {canDelete && (
                       <button onClick={() => { setModalType('DELETE'); setModalData({ id: room.id, target: 'ROOM', name: room.roomNumber }); }} className="hover:text-red-500 transition-colors p-1">
                         <span className="material-symbols-outlined text-[20px]">delete</span>
                       </button>
