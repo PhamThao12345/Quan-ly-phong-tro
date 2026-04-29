@@ -307,24 +307,9 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
                 <div className="grid grid-cols-1 gap-4">
                   {previewData.items.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-emerald-100 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${
-                          item.serviceName.toLowerCase().includes('điện') ? 'bg-amber-50 text-amber-600' :
-                          item.serviceName.toLowerCase().includes('nước') ? 'bg-blue-50 text-blue-600' :
-                          item.serviceName.toLowerCase().includes('phòng') ? 'bg-emerald-50 text-emerald-600' :
-                          'bg-slate-100 text-slate-500'
-                        }`}>
-                          <span className="material-symbols-outlined text-xl">
-                            {item.serviceName.toLowerCase().includes('điện') ? 'bolt' :
-                             item.serviceName.toLowerCase().includes('nước') ? 'water_drop' :
-                             item.serviceName.toLowerCase().includes('phòng') ? 'home' :
-                             'service_toolbox'}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-slate-700">{item.serviceName}</p>
-                          <p className="text-[10px] text-slate-400 font-medium uppercase">{item.description}</p>
-                        </div>
+                      <div>
+                        <p className="text-sm font-bold text-slate-700">{item.serviceName}</p>
+                        <p className="text-[10px] text-slate-400 font-medium uppercase">{item.description}</p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-extrabold text-slate-900">{item.amount.toLocaleString()}đ</p>
