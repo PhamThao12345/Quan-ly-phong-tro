@@ -115,6 +115,24 @@ const HopDongPage = () => {
   const handleContractSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Validation cơ bản tại frontend
+      const allTenants = [
+        { ...modalData.mainTenant, isMain: true },
+        ...modalData.additionalTenants
+      ];
+
+      const cccds = allTenants.map(t => t.cccd?.trim());
+      if (cccds.some(c => !c)) {
+        showToast('Vui lòng nhập đầy đủ CCCD cho tất cả khách thuê', 'error');
+        return;
+      }
+
+      const duplicateCccd = cccds.find((c, i) => cccds.indexOf(c) !== i);
+      if (duplicateCccd) {
+        showToast(`CCCD ${duplicateCccd} bị nhập trùng lặp!`, 'error');
+        return;
+      }
+
       if (modalType === 'ADD') {
         const payload = {
           roomId: modalData.roomId,
@@ -631,16 +649,16 @@ Mọi hành vi vi phạm pháp luật hoặc nội quy nghiêm trọng sẽ dẫ
                           </button>
                           <div className="grid grid-cols-3 gap-4">
                             <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-[#6d7a72] uppercase ml-1">Họ tên</label>
-                              <input value={t.fullName} onChange={e => {
+                              <label className="text-[9px] font-bold text-[#6d7a72] uppercase ml-1">Họ tên <span className="text-red-500">*</span></label>
+                              <input required value={t.fullName} onChange={e => {
                                 const newT = [...modalData.additionalTenants];
                                 newT[idx].fullName = e.target.value;
                                 setModalData({...modalData, additionalTenants: newT});
                               }} className="w-full px-3 py-2 bg-white border border-[#bccac0]/30 rounded-lg text-sm focus:outline-none focus:border-[#006948]" placeholder="Họ và tên" />
                             </div>
                             <div className="space-y-1">
-                              <label className="text-[9px] font-bold text-[#6d7a72] uppercase ml-1">CCCD</label>
-                              <input value={t.cccd} onChange={e => {
+                              <label className="text-[9px] font-bold text-[#6d7a72] uppercase ml-1">CCCD <span className="text-red-500">*</span></label>
+                              <input required value={t.cccd} onChange={e => {
                                 const newT = [...modalData.additionalTenants];
                                 newT[idx].cccd = e.target.value;
                                 setModalData({...modalData, additionalTenants: newT});

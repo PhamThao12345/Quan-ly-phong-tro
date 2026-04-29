@@ -123,14 +123,30 @@ const createContract = async (data) => {
     });
 
     if (tenants && tenants.length > 0) {
-      for (const tData of tenants) {
-        let tenant = await tx.tenant.findUnique({ where: { cccd: tData.cccd } });
+      // 1. Lọc bỏ các khách thuê trùng CCCD hoặc thiếu CCCD trong mảng đầu vào
+      const uniqueTenants = [];
+      const seenCccds = new Set();
+      
+      for (const t of tenants) {
+        const cccd = t.cccd?.trim();
+        if (!cccd) {
+          throw { status: 400, message: `Vui lòng nhập số CCCD cho khách thuê ${t.fullName || ''}` };
+        }
+        if (!seenCccds.has(cccd)) {
+          seenCccds.add(cccd);
+          uniqueTenants.push(t);
+        }
+      }
+
+      // 2. Xử lý từng khách thuê duy nhất
+      for (const tData of uniqueTenants) {
+        let tenant = await tx.tenant.findUnique({ where: { cccd: tData.cccd.trim() } });
         
         if (!tenant) {
           tenant = await tx.tenant.create({
             data: {
               fullName: tData.fullName,
-              cccd: tData.cccd,
+              cccd: tData.cccd.trim(),
               phoneNumber: tData.phoneNumber,
               email: tData.email || null,
               dateOfBirth: tData.dateOfBirth ? new Date(tData.dateOfBirth) : null,
@@ -142,7 +158,12 @@ const createContract = async (data) => {
         } else {
           tenant = await tx.tenant.update({
             where: { id: tenant.id },
-            data: { roomId: Number(roomId), status: 'DANG_THUE' }
+            data: { 
+              roomId: Number(roomId), 
+              status: 'DANG_THUE',
+              fullName: tData.fullName, // Cập nhật tên mới nếu có
+              phoneNumber: tData.phoneNumber // Cập nhật SĐT mới
+            }
           });
         }
 
@@ -220,21 +241,57 @@ const updateContract = async (id, data) => {
 
     // 2. Cập nhật thông tin khách thuê
     if (data.tenants && data.tenants.length > 0) {
-      for (const tData of data.tenants) {
-        if (tData.tenantId || tData.id) {
-          const tId = tData.tenantId || tData.id;
-          await tx.tenant.update({
-            where: { id: Number(tId) },
+      // 1. Lọc bỏ các khách thuê trùng CCCD hoặc thiếu CCCD
+      const uniqueTenants = [];
+      const seenCccds = new Set();
+      for (const t of data.tenants) {
+        const cccd = t.cccd?.trim();
+        if (!cccd) throw { status: 400, message: `Vui lòng nhập số CCCD cho khách thuê ${t.fullName || ''}` };
+        if (!seenCccds.has(cccd)) {
+          seenCccds.add(cccd);
+          uniqueTenants.push(t);
+        }
+      }
+
+      // Xóa các liên kết cũ để tạo lại mới (đảm bảo đồng bộ)
+      await tx.contractTenant.deleteMany({ where: { contractId: Number(id) } });
+
+      for (const tData of uniqueTenants) {
+        let tenant = await tx.tenant.findUnique({ where: { cccd: tData.cccd.trim() } });
+        const targetRoomId = data.roomId ? Number(data.roomId) : contract.roomId;
+        
+        if (!tenant) {
+          tenant = await tx.tenant.create({
             data: {
               fullName: tData.fullName,
-              cccd: tData.cccd,
+              cccd: tData.cccd.trim(),
               phoneNumber: tData.phoneNumber,
-              email: tData.email,
-              hometown: tData.hometown,
-              dateOfBirth: tData.dateOfBirth ? new Date(tData.dateOfBirth) : null
+              email: tData.email || null,
+              dateOfBirth: tData.dateOfBirth ? new Date(tData.dateOfBirth) : null,
+              hometown: tData.hometown || null,
+              roomId: targetRoomId,
+              status: 'DANG_THUE'
+            }
+          });
+        } else {
+          tenant = await tx.tenant.update({
+            where: { id: tenant.id },
+            data: { 
+              roomId: targetRoomId, 
+              status: 'DANG_THUE',
+              fullName: tData.fullName,
+              phoneNumber: tData.phoneNumber
             }
           });
         }
+
+        await tx.contractTenant.create({
+          data: {
+            contractId: Number(id),
+            tenantId: tenant.id,
+            isMain: tData.isMain || false
+          }
+        });
       }
     }
 
