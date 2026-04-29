@@ -307,9 +307,11 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
                 <div className="grid grid-cols-1 gap-4">
                   {previewData.items.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 hover:border-emerald-100 transition-colors">
-                      <div>
-                        <p className="text-sm font-bold text-slate-700">{item.serviceName}</p>
-                        <p className="text-[10px] text-slate-400 font-medium uppercase">{item.description}</p>
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <p className="text-sm font-bold text-slate-700">{item.serviceName}</p>
+                          <p className="text-[10px] text-emerald-600 font-medium italic">{item.description}</p>
+                        </div>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-extrabold text-slate-900">{item.amount.toLocaleString()}đ</p>
