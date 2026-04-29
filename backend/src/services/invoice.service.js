@@ -150,7 +150,7 @@ const lookupHistoricalTenant = async (roomId, month, year) => {
  * Tạo hóa đơn mới
  */
 const createInvoice = async (data) => {
-  const { roomId, month, year, items, totalAmount } = data;
+  const { roomId, month, year, items, totalAmount, discount = 0 } = data;
 
   // Tạo mã hóa đơn dựa trên ID lớn nhất hiện tại và timestamp để đảm bảo duy nhất
   const lastInvoice = await prisma.invoice.findFirst({
@@ -178,6 +178,7 @@ const createInvoice = async (data) => {
       month: Number(month),
       year: Number(year),
       totalAmount: Number(totalAmount),
+      discount: Number(discount),
       status: 'DA_TAO',
       tenantName: room.tenants[0]?.fullName || 'N/A',
       hostelName: room.hostel.name,
@@ -264,7 +265,7 @@ const getInvoices = async (params) => {
  * Cập nhật hóa đơn
  */
 const updateInvoice = async (id, data) => {
-  const { status, totalAmount, items } = data;
+  const { status, totalAmount, items, discount = 0 } = data;
 
   // Nếu cập nhật items, chúng ta sẽ xóa items cũ và tạo lại (để đơn giản)
   if (items) {
@@ -274,6 +275,7 @@ const updateInvoice = async (id, data) => {
       data: {
         status,
         totalAmount: Number(totalAmount),
+        discount: Number(discount),
         items: {
           create: items.map(item => ({
             serviceName: item.serviceName,

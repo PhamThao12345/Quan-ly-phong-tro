@@ -15,7 +15,8 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
     roomId: '',
     month: new Date().getMonth() + 1,
     year: new Date().getFullYear(),
-    status: 'DA_TAO'
+    status: 'DA_TAO',
+    discount: 0
   });
 
   const [previewData, setPreviewData] = useState(null);
@@ -33,7 +34,8 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
           roomId: '',
           month: new Date().getMonth() + 1,
           year: new Date().getFullYear(),
-          status: 'DA_TAO'
+          status: 'DA_TAO',
+          discount: 0
         });
         setPreviewData(null);
         setRooms([]);
@@ -68,7 +70,8 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
           roomId: current.roomId,
           month: current.month,
           year: current.year,
-          status: current.status
+          status: current.status,
+          discount: current.discount || 0
         });
         setPreviewData(current);
         await fetchRoomsByHostel(current.room.hostelId);
@@ -141,6 +144,18 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
       setPreviewLoading(false);
     }
   };
+  
+  // Tính tổng tiền sau khi trừ
+  const calculateFinalTotal = () => {
+    if (!previewData) return 0;
+    // Nếu là preview chưa lưu, totalAmount là tổng các items
+    // Nếu là hóa đơn đã lưu, totalAmount đã bao gồm discount cũ? 
+    // Thống nhất: totalAmount từ backend cho preview/getById là TỔNG CHƯA TRỪ? 
+    // Không, totalAmount trong DB là tổng CUỐI CÙNG.
+    // Để an toàn, tính tổng từ items
+    const itemsSum = previewData.items?.reduce((sum, item) => sum + item.amount, 0) || 0;
+    return itemsSum - (formData.discount || 0);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -149,11 +164,13 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
 
     setLoading(true);
     try {
+      const finalTotal = calculateFinalTotal();
       if (invoiceId) {
         await invoiceApi.updateInvoice(invoiceId, { 
           status: formData.status,
           items: previewData.items,
-          totalAmount: previewData.totalAmount
+          totalAmount: finalTotal,
+          discount: formData.discount
         });
       } else {
         await invoiceApi.createInvoice({
@@ -161,7 +178,8 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
           month: formData.month,
           year: formData.year,
           items: previewData.items,
-          totalAmount: previewData.totalAmount
+          totalAmount: finalTotal,
+          discount: formData.discount
         });
       }
       onSuccess();
@@ -340,7 +358,7 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
               </div>
             </div>
 
-            {/* Tiền rác & Trạng thái */}
+            {/* Tiền rác, Được trừ & Trạng thái */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Tiền rác</label>
@@ -351,14 +369,25 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
                     type="text" 
                     value={getItemValue('Rác')}
                   />
-                  <span className="block text-[10px] text-emerald-600 font-medium mt-1 ml-1 italic min-h-[14px]">
-                    {getItemDesc('Rác')}
-                  </span>
                 </div>
               </div>
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1 text-red-500">Được trừ (VNĐ)</label>
+                <input 
+                  className="w-full px-4 py-2.5 bg-white border border-red-200 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500 outline-none text-sm font-bold text-red-600 disabled:bg-slate-50 disabled:text-slate-400" 
+                  type="number"
+                  value={formData.discount}
+                  onChange={e => setFormData(prev => ({...prev, discount: Number(e.target.value)}))}
+                  disabled={isView}
+                  placeholder="0"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               {!isView && (
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Trạng thái</label>
+                <div className="space-y-1.5 col-span-2">
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest px-1">Trạng thái thanh toán</label>
                   <select 
                     value={formData.status}
                     onChange={e => setFormData(prev => ({...prev, status: e.target.value}))}
@@ -383,7 +412,7 @@ const InvoiceModal = ({ isOpen, onClose, invoiceId, mode = 'add', onSuccess }) =
               </div>
               <div className="text-right">
                 <span className="text-3xl font-extrabold text-emerald-600 font-headline">
-                  {previewData?.totalAmount ? `${previewData.totalAmount.toLocaleString()}đ` : '0đ'}
+                  {previewData ? `${calculateFinalTotal().toLocaleString()}đ` : '0đ'}
                 </span>
               </div>
             </div>
