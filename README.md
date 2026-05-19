@@ -101,7 +101,7 @@ npm run dev
 
 # Lưu ý: Cần tạo file `.env` trong thư mục `backend/` trước khi chạy.
 DATABASE_URL="file:./dev.db"
-JWT_SECRET="chuoi_bi_mat_123"
+JWT_SECRET="mật khẩu"
 
 EMAIL_USER="#điền mail làm tài khoản hệ thống"
 EMAIL_PASS="#mật khẩu không cách App Password"
