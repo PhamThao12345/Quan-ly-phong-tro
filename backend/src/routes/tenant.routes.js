@@ -12,6 +12,9 @@ router.get('/stats', checkPermission('khach_thue', 'view'), tenantController.get
 // Export CSV
 router.get('/export', checkPermission('khach_thue', 'view'), tenantController.exportTenants);
 
+// Tra cứu khách thuê theo CCCD (dùng khi lập hợp đồng)
+router.get('/lookup-cccd/:cccd', checkPermission('hop_dong', 'view'), tenantController.lookupByCccd);
+
 // CRUD
 router.get('/', checkPermission('khach_thue', 'view'), tenantController.getAllTenants);
 router.get('/:id', checkPermission('khach_thue', 'view'), tenantController.getTenantById);

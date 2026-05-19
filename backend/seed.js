@@ -13,7 +13,7 @@ async function main() {
     create: {
       username: '0901234567',
       phoneNumber: '0901234567',
-      fullName: 'Thanh Phạm (Chủ Trợ)',
+      fullName: 'Thanh Phạm (Quản trị viên)',
       password: passwordHash,
       status: 'ACTIVE',
       role: 'CHU_TRO'
@@ -49,7 +49,7 @@ async function main() {
   });
 
   console.log('Seeded successfully! Tài khoản test:');
-  console.log('1. Chủ trọ (Vào thẳng): 0901234567 / 123456');
+  console.log('1. Quản trị viên (Vào thẳng): 0901234567 / 123456');
   console.log('2. Nhân viên (Ép đổi pass): 0888888888 / 123456');
   console.log('3. Nhân viên (Bị khóa): 0777777777 / 123456');
 }

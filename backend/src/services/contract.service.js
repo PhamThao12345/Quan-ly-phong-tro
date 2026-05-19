@@ -44,7 +44,7 @@ const getAllContracts = async (page, limit, search, filters = {}) => {
   if (search) {
     where.OR = [
       { room: { roomNumber: { contains: search } } },
-      { tenants: { some: { tenant: { fullName: { contains: search } } } } }
+      { tenants: { some: { isMain: true, tenant: { fullName: { contains: search } } } } }
     ];
   }
 
@@ -156,13 +156,17 @@ const createContract = async (data) => {
             }
           });
         } else {
+          // Khách cũ quay lại: cập nhật thông tin cá nhân (nếu có thay đổi) và chuyển trạng thái
           tenant = await tx.tenant.update({
             where: { id: tenant.id },
             data: { 
               roomId: Number(roomId), 
               status: 'DANG_THUE',
-              fullName: tData.fullName, // Cập nhật tên mới nếu có
-              phoneNumber: tData.phoneNumber // Cập nhật SĐT mới
+              fullName: tData.fullName || tenant.fullName,
+              phoneNumber: tData.phoneNumber || tenant.phoneNumber,
+              email: tData.email || tenant.email,
+              dateOfBirth: tData.dateOfBirth ? new Date(tData.dateOfBirth) : tenant.dateOfBirth,
+              hometown: tData.hometown || tenant.hometown
             }
           });
         }
@@ -279,8 +283,11 @@ const updateContract = async (id, data) => {
             data: { 
               roomId: targetRoomId, 
               status: 'DANG_THUE',
-              fullName: tData.fullName,
-              phoneNumber: tData.phoneNumber
+              fullName: tData.fullName || tenant.fullName,
+              phoneNumber: tData.phoneNumber || tenant.phoneNumber,
+              email: tData.email || tenant.email,
+              dateOfBirth: tData.dateOfBirth ? new Date(tData.dateOfBirth) : tenant.dateOfBirth,
+              hometown: tData.hometown || tenant.hometown
             }
           });
         }
@@ -366,19 +373,43 @@ const terminateContract = async (id) => {
       data: { status: 'DA_KET_THUC', endDate: new Date() }
     });
 
-    // 2. Cập nhật phòng về Trống
-    await tx.room.update({
-      where: { id: contract.roomId },
-      data: { status: 'TRONG' }
+    // 2. Kiểm tra xem phòng còn hợp đồng nào khác đang hoạt động hay không
+    const otherActiveContracts = await tx.contract.findMany({
+      where: {
+        roomId: contract.roomId,
+        id: { not: id },
+        status: { in: ['DANG_HIEU_LUC', 'SAP_HET_HAN'] }
+      }
     });
 
-    // 3. Cập nhật trạng thái khách thuê
+    if (otherActiveContracts.length === 0) {
+      // Chỉ cập nhật phòng về Trống nếu không còn hợp đồng hoạt động nào khác
+      await tx.room.update({
+        where: { id: contract.roomId },
+        data: { status: 'TRONG' }
+      });
+    }
+
+    // 3. Cập nhật trạng thái khách thuê thuộc hợp đồng này
     const cTenants = await tx.contractTenant.findMany({ where: { contractId: id } });
     for (const ct of cTenants) {
-      await tx.tenant.update({
-        where: { id: ct.tenantId },
-        data: { status: 'NGUNG_THUE', roomId: null }
+      // Chỉ chuyển trạng thái khách sang NGUNG_THUE nếu họ không tham gia hợp đồng active nào khác
+      const otherActiveTenantContracts = await tx.contractTenant.findMany({
+        where: {
+          tenantId: ct.tenantId,
+          contractId: { not: id },
+          contract: {
+            status: { in: ['DANG_HIEU_LUC', 'SAP_HET_HAN'] }
+          }
+        }
       });
+
+      if (otherActiveTenantContracts.length === 0) {
+        await tx.tenant.update({
+          where: { id: ct.tenantId },
+          data: { status: 'NGUNG_THUE', roomId: null }
+        });
+      }
     }
 
     return updated;

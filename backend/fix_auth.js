@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 async function main() {
   const hashedPassword = await bcrypt.hash('123456aA@', 10);
 
-  // 1. Reset Chủ trọ
+  // 1. Reset Quản trị viên
   const owner = await prisma.user.upsert({
     where: { username: '0901234567' },
     update: {
@@ -17,7 +17,7 @@ async function main() {
     create: {
       username: '0901234567',
       password: hashedPassword,
-      fullName: 'Chủ trọ (T\'s House)',
+      fullName: 'Quản trị viên (T\'s House)',
       phoneNumber: '0901234567',
       role: 'CHU_TRO',
       status: 'ACTIVE'
@@ -44,7 +44,7 @@ async function main() {
   });
 
   console.log('--- RESET THÀNH CÔNG ---');
-  console.log('1. CHỦ TRỌ:');
+  console.log('1. QUẢN TRỊ VIÊN:');
   console.log('   Username:', owner.username);
   console.log('   Password: 123456aA@');
   console.log('2. NHÂN VIÊN:');

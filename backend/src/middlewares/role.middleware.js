@@ -21,8 +21,13 @@ const checkPermission = (moduleId, action) => {
       return res.status(401).json({ status: 'error', message: 'Yêu cầu đăng nhập' });
     }
 
-    // Chủ trọ luôn có toàn quyền
+    // Quản trị viên luôn có toàn quyền
     if (req.user.role === 'CHU_TRO') {
+      return next();
+    }
+
+    // Quản lý có toàn quyền trong module Báo cáo
+    if (req.user.role === 'MANAGER' && moduleId === 'bao_cao') {
       return next();
     }
 

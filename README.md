@@ -1,9 +1,9 @@
 **1. Ngữ cảnh & Mục tiêu dự án**
-Dự án được xây dựng nhằm mục đích số hóa quy trình quản lý các khu trọ, giúp chủ trọ (Admin) và quản lý (Manager) kiểm soát được tình hình phòng trọ, khách thuê, hợp đồng và doanh thu một cách chính xác.
+Dự án được xây dựng nhằm mục đích số hóa quy trình quản lý các khu trọ, giúp Quản trị viên (Admin) và quản lý (Manager) kiểm soát được tình hình phòng trọ, khách thuê, hợp đồng và doanh thu một cách chính xác.
 
 Hệ thống Phân quyền (RBAC):
-Chủ trọ (Nguyễn Đình Việt): Quyền hạn cao nhất, quản lý toàn bộ hệ thống bao gồm cả việc tạo/xóa tài khoản Manager và Staff. Có quyền xóa lịch sử hoạt động.
-Quản trị viên (Manager): Quản lý khách thuê, phòng, hóa đơn, xem báo cáo. Không được phép chỉnh sửa/xóa tài khoản của Chủ trọ.
+Quản trị viên (Nguyễn Đình Việt): Quyền hạn cao nhất, quản lý toàn bộ hệ thống bao gồm cả việc tạo/xóa tài khoản Manager và Staff. Có quyền xóa lịch sử hoạt động.
+Quản lý (Manager): Quản lý khách thuê, phòng, hóa đơn, xem báo cáo. Không được phép chỉnh sửa/xóa tài khoản của Quản trị viên.
 Nhân viên (Staff): Thực hiện các tác vụ vận hành hàng ngày như cập nhật số điện, tạo hóa đơn. Bị giới hạn quyền truy cập vào các module nhạy cảm như Báo cáo và Quản lý Người dùng cấp cao.
 
 **2. Cấu trúc Thư mục Dự án**
@@ -95,8 +95,8 @@ npm run dev
 
 | Vai trò       | Số điện thoại |Mật khẩu
 |---------------|----------------|
-| Chủ trọ (ad)  | 0901234567     |123456
-| Quản trị viên | 0258963121     |f4yn9tNyHY
+| Quản trị viên (ad)  | 0901234567     |123456
+| Quản lý | 0258963121     |f4yn9tNyHY
 | Nhân viên     | 0888888888     |eFo12WawTx
 
 # Lưu ý: Cần tạo file `.env` trong thư mục `backend/` trước khi chạy.

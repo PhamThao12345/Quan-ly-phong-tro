@@ -41,7 +41,11 @@ export const AuthProvider = ({ children }) => {
 
   const hasPermission = (moduleId, action) => {
     if (!user) return false;
+    // Quản trị viên luôn có toàn quyền
     if (user.role === 'CHU_TRO') return true;
+    // Quản lý có toàn quyền trong module Báo cáo
+    if (user.role === 'MANAGER' && moduleId === 'bao_cao') return true;
+    
     return user.permissions?.[moduleId]?.[action] === true;
   };
 

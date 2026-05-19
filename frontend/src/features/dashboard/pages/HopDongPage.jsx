@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { AuthContext } from '../../../contexts/AuthContext';
 import * as contractService from '../../../services/contract.service';
 import * as hostelService from '../../../services/hostel.service';
 import * as roomService from '../../../services/room.service';
+import * as tenantService from '../../../services/tenant.service';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -36,6 +37,7 @@ const HopDongPage = () => {
   const [modalRooms, setModalRooms] = useState([]);
   const [isEditingContent, setIsEditingContent] = useState(false);
   const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
+  const [cccdLookupStatus, setCccdLookupStatus] = useState({}); // { main: 'found'|'not_found'|null, 0: ..., 1: ... }
 
   const fetchContracts = async () => {
     try {
@@ -87,6 +89,7 @@ const HopDongPage = () => {
     setModalType(null);
     setModalData(null);
     setIsEditingContent(false);
+    setCccdLookupStatus({});
   };
 
   const handleHostelChange = (hId, filterByEmpty = true) => {
@@ -111,6 +114,53 @@ const HopDongPage = () => {
       additionalTenants: prev.additionalTenants.filter((_, i) => i !== index)
     }));
   };
+
+  // Tra cứu CCCD để tự động điền thông tin khách cũ
+  const handleCccdLookup = useCallback(async (cccd, tenantType, index = null) => {
+    const trimmed = cccd?.trim();
+    if (!trimmed || trimmed.length < 9) return; // Chỉ tra cứu khi đủ dài
+
+    try {
+      const result = await tenantService.lookupByCccd(trimmed);
+      if (result.status === 'success' && result.data) {
+        const t = result.data;
+        const tenantInfo = {
+          fullName: t.fullName || '',
+          cccd: t.cccd,
+          phoneNumber: t.phoneNumber || '',
+          email: t.email || '',
+          hometown: t.hometown || '',
+          dateOfBirth: t.dateOfBirth ? t.dateOfBirth.split('T')[0] : ''
+        };
+
+        if (tenantType === 'main') {
+          setModalData(prev => ({
+            ...prev,
+            mainTenant: { ...prev.mainTenant, ...tenantInfo }
+          }));
+          setCccdLookupStatus(prev => ({ ...prev, main: 'found' }));
+          showToast(`Đã nhận diện khách cũ: ${t.fullName}. Thông tin đã được tự động điền, bạn có thể chỉnh sửa.`, 'success');
+        } else {
+          setModalData(prev => {
+            const newTenants = [...prev.additionalTenants];
+            newTenants[index] = { ...newTenants[index], ...tenantInfo, isMain: false };
+            return { ...prev, additionalTenants: newTenants };
+          });
+          setCccdLookupStatus(prev => ({ ...prev, [index]: 'found' }));
+          showToast(`Đã nhận diện khách cũ: ${t.fullName}`, 'success');
+        }
+      }
+    } catch (err) {
+      // 404 = khách mới, không hiện lỗi
+      if (err.response?.status === 404) {
+        if (tenantType === 'main') {
+          setCccdLookupStatus(prev => ({ ...prev, main: 'not_found' }));
+        } else {
+          setCccdLookupStatus(prev => ({ ...prev, [index]: 'not_found' }));
+        }
+      }
+    }
+  }, []);
 
   const handleContractSubmit = async (e) => {
     e.preventDefault();
@@ -603,7 +653,14 @@ Mọi hành vi vi phạm pháp luật hoặc nội quy nghiêm trọng sẽ dẫ
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-[#6d7a72] ml-1 uppercase">CCCD <span className="text-red-500">*</span></label>
-                        <input required value={modalData.mainTenant.cccd} onChange={e => setModalData({...modalData, mainTenant: {...modalData.mainTenant, cccd: e.target.value}})} className="w-full px-4 py-2.5 bg-white border border-[#bccac0]/40 rounded-lg text-sm focus:outline-none focus:border-[#006948]" placeholder="012345678xxx" />
+                        <input required value={modalData.mainTenant.cccd} 
+                          onChange={e => {
+                            setModalData({...modalData, mainTenant: {...modalData.mainTenant, cccd: e.target.value}});
+                            setCccdLookupStatus(prev => ({ ...prev, main: null }));
+                          }}
+                          onBlur={e => handleCccdLookup(e.target.value, 'main')}
+                          className="w-full px-4 py-2.5 bg-white border border-[#bccac0]/40 rounded-lg text-sm focus:outline-none focus:border-[#006948]"
+                          placeholder="012345678xxx" />
                       </div>
                       <div className="space-y-1">
                         <label className="text-[10px] font-bold text-[#6d7a72] ml-1 uppercase">Quê quán <span className="text-red-500">*</span></label>
@@ -660,7 +717,11 @@ Mọi hành vi vi phạm pháp luật hoặc nội quy nghiêm trọng sẽ dẫ
                                 const newT = [...modalData.additionalTenants];
                                 newT[idx].cccd = e.target.value;
                                 setModalData({...modalData, additionalTenants: newT});
-                              }} className="w-full px-3 py-2 bg-white border border-[#bccac0]/30 rounded-lg text-sm focus:outline-none focus:border-[#006948]" placeholder="Số CCCD" />
+                                setCccdLookupStatus(prev => ({ ...prev, [idx]: null }));
+                              }} 
+                              onBlur={e => handleCccdLookup(e.target.value, 'additional', idx)}
+                              className="w-full px-3 py-2 bg-white border border-[#bccac0]/30 rounded-lg text-sm focus:outline-none focus:border-[#006948]"
+                              placeholder="Số CCCD" />
                             </div>
                             <div className="space-y-1">
                               <label className="text-[9px] font-bold text-[#6d7a72] uppercase ml-1">Quê quán</label>

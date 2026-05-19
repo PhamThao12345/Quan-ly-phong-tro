@@ -107,10 +107,14 @@ const calculateInvoicePreview = async (roomId, month, year) => {
 
   const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
 
+  // Lấy người đại diện mới nhất theo hợp đồng
+  const historicalTenantName = await lookupHistoricalTenant(rId, m, y);
+  const mainTenantName = historicalTenantName || room.tenants.find(t => t.status === 'DANG_THUE')?.fullName || 'Chưa có khách thuê';
+
   return {
     roomNumber: room.roomNumber,
     hostelName: room.hostel.name,
-    mainTenant: room.tenants[0]?.fullName || 'Chưa có khách thuê',
+    mainTenant: mainTenantName,
     tenantsCount,
     items,
     totalAmount,
@@ -126,9 +130,12 @@ const lookupHistoricalTenant = async (roomId, month, year) => {
   try {
     const startOfMonth = new Date(year, month - 1, 1);
     const endOfMonth = new Date(year, month, 0, 23, 59, 59);
-    const contract = await prisma.contract.findFirst({
+
+    // 1. Lấy tất cả hợp đồng đang hoạt động của phòng trong tháng/năm này
+    let activeContracts = await prisma.contract.findMany({
       where: {
         roomId: Number(roomId),
+        status: { in: ['DANG_HIEU_LUC', 'SAP_HET_HAN'] },
         startDate: { lte: endOfMonth },
         endDate: { gte: startOfMonth }
       },
@@ -138,9 +145,71 @@ const lookupHistoricalTenant = async (roomId, month, year) => {
           include: { tenant: true }
         }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'asc' } // Sắp xếp từ cũ nhất đến mới nhất
     });
-    return contract?.tenants[0]?.tenant?.fullName || null;
+
+    // 2. Fallback: Nếu không tìm thấy hợp đồng active trong tháng, lấy tất cả hợp đồng lịch sử (kể cả đã kết thúc)
+    if (activeContracts.length === 0) {
+      activeContracts = await prisma.contract.findMany({
+        where: {
+          roomId: Number(roomId),
+          startDate: { lte: endOfMonth },
+          endDate: { gte: startOfMonth }
+        },
+        include: {
+          tenants: {
+            where: { isMain: true },
+            include: { tenant: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+
+    // 3. Fallback tiếp theo: Lấy các hợp đồng mới nhất của phòng này
+    if (activeContracts.length === 0) {
+      activeContracts = await prisma.contract.findMany({
+        where: { roomId: Number(roomId) },
+        include: {
+          tenants: {
+            where: { isMain: true },
+            include: { tenant: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 1
+      });
+    }
+
+    // Xử lý quyết định tên người đại diện:
+    if (activeContracts.length === 1) {
+      // Trường hợp 1: Chỉ có duy nhất 1 hợp đồng hoạt động (hoặc lịch sử)
+      // -> Trả về ngay người đại diện mới nhất của hợp đồng này (đáp ứng đúng khi lập hợp đồng mới trên phòng trống)
+      return activeContracts[0]?.tenants[0]?.tenant?.fullName || null;
+    }
+
+    if (activeContracts.length > 1) {
+      // Trường hợp 2: Có nhiều hơn 1 hợp đồng hoạt động đồng thời (khách mới chuyển vào phòng đang có người thuê)
+      // -> Ưu tiên lấy tên từ hóa đơn cũ gần nhất để giữ đúng người đại diện ban đầu
+      const lastInvoice = await prisma.invoice.findFirst({
+        where: { 
+          roomId: Number(roomId),
+          tenantName: { notIn: ['N/A', 'Chưa có khách thuê'] }
+        },
+        orderBy: { id: 'desc' }
+      });
+      if (lastInvoice && lastInvoice.tenantName) {
+        // Kiểm tra xem tên hóa đơn cũ có trùng với một trong những người đại diện active không
+        const match = activeContracts.find(c => c.tenants[0]?.tenant?.fullName === lastInvoice.tenantName);
+        if (match) {
+          return lastInvoice.tenantName;
+        }
+      }
+      // Nếu không khớp hoặc không có hóa đơn cũ, lấy hợp đồng gốc được tạo trước
+      return activeContracts[0]?.tenants[0]?.tenant?.fullName || null;
+    }
+
+    return null;
   } catch {
     return null;
   }
@@ -171,6 +240,10 @@ const createInvoice = async (data) => {
   if (!room) throw { status: 404, message: 'Phòng không tồn tại' };
   if (room.status !== 'DANG_O') throw { status: 400, message: 'Phòng đang trống, không thể tạo hóa đơn.' };
 
+  // Lấy người đại diện mới nhất theo hợp đồng
+  const historicalTenantName = await lookupHistoricalTenant(roomId, month, year);
+  const mainTenantName = historicalTenantName || room.tenants.find(t => t.status === 'DANG_THUE')?.fullName || 'N/A';
+
   return await prisma.invoice.create({
     data: {
       invoiceCode,
@@ -180,7 +253,7 @@ const createInvoice = async (data) => {
       totalAmount: Number(totalAmount),
       discount: Number(discount),
       status: 'DA_TAO',
-      tenantName: room.tenants[0]?.fullName || 'N/A',
+      tenantName: mainTenantName,
       hostelName: room.hostel.name,
       roomNumber: room.roomNumber,
       items: {
@@ -198,9 +271,33 @@ const createInvoice = async (data) => {
 };
 
 /**
+ * Tự động chuyển các hóa đơn ở trạng thái đã tạo (DA_TAO) và đã gửi (DA_GUI)
+ * sang trạng thái quá hạn (QUA_HAN) nếu đã quá 10 ngày kể từ ngày tạo.
+ */
+const updateOverdueInvoices = async () => {
+  try {
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
+    await prisma.invoice.updateMany({
+      where: {
+        status: { in: ['DA_TAO', 'DA_GUI'] },
+        createdAt: { lte: tenDaysAgo }
+      },
+      data: {
+        status: 'QUA_HAN'
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi khi tự động cập nhật hóa đơn quá hạn:', error);
+  }
+};
+
+/**
  * Lấy danh sách hóa đơn
  */
 const getInvoices = async (params) => {
+  await updateOverdueInvoices();
   const { page = 1, limit = 10, hostelId, roomId, status, month, year, search } = params;
   const skip = (page - 1) * limit;
 
@@ -311,7 +408,7 @@ const deleteInvoice = async (id) => {
   return await prisma.invoice.delete({ where: { id: Number(id) } });
 };
 
-const nodemailer = require('nodemailer');
+const mailService = require('./mail.service');
 
 /**
  * Gửi email hóa đơn
@@ -337,20 +434,11 @@ const sendInvoiceEmail = async (id) => {
     throw { status: 400, message: 'Khách thuê chưa có địa chỉ email' };
   }
 
-  // Tạo link QR VietQR (Ví dụ: Ngân hàng MB, STK: 0901234567)
+  // Tạo link QR VietQR
   const bankId = process.env.BANK_ID || 'MB';
   const accountNo = process.env.BANK_ACCOUNT_NO || '0901234567';
   const accountName = process.env.BANK_ACCOUNT_NAME || 'CHU NHA';
   const qrUrl = `https://img.vietqr.io/image/${bankId}-${accountNo}-compact2.png?amount=${invoice.totalAmount}&addInfo=${encodeURIComponent(invoice.invoiceCode)}&accountName=${encodeURIComponent(accountName)}`;
-
-  // Cấu hình transporter (Lưu ý: user cần thêm EMAIL_USER và EMAIL_PASS vào .env)
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER || 'test@example.com',
-      pass: process.env.EMAIL_PASS || 'password'
-    }
-  });
 
   // Tạo nội dung chi tiết hóa đơn
   const itemsHtml = invoice.items.map(item => `
@@ -362,11 +450,8 @@ const sendInvoiceEmail = async (id) => {
     </tr>
   `).join('');
 
-  const mailOptions = {
-    from: `"Quản Lý Phòng Trọ" <${process.env.EMAIL_USER || 'test@example.com'}>`,
-    to: mainTenant.email,
-    subject: `Hóa đơn tiền nhà tháng ${invoice.month}/${invoice.year} - Phòng ${invoice.room.roomNumber}`,
-    html: `
+  const subject = `Hóa đơn tiền nhà tháng ${invoice.month}/${invoice.year} - Phòng ${invoice.room.roomNumber}`;
+  const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
         <div style="background-color: #006948; color: white; padding: 20px; text-align: center;">
           <h2 style="margin: 0;">Hóa đơn tiền nhà tháng ${invoice.month}/${invoice.year}</h2>
@@ -423,14 +508,17 @@ const sendInvoiceEmail = async (id) => {
           <p style="margin: 0;">Email này được gửi tự động từ hệ thống Quản lý phòng trọ. Vui lòng không trả lời.</p>
         </div>
       </div>
-    `
-  };
+    `;
 
-  // Nếu không có mật khẩu cấu hình, bỏ qua gửi mail thực tế để không sập app (nhưng vẫn update status)
   if (process.env.EMAIL_PASS) {
-    await transporter.sendMail(mailOptions);
+    try {
+      await mailService.sendMail({ to: mainTenant.email, subject, html });
+    } catch (error) {
+      console.error('Failed to send invoice email:', error);
+      throw { status: 500, message: 'Lỗi khi gửi email hóa đơn: ' + error.message };
+    }
   } else {
-    console.warn("Chưa cấu hình EMAIL_USER và EMAIL_PASS trong file .env. Bỏ qua gửi email thực tế.");
+    console.warn("Chưa cấu hình EMAIL_PASS trong file .env. Bỏ qua gửi email thực tế.");
   }
 
   // Cập nhật trạng thái
@@ -450,6 +538,7 @@ const sendInvoiceEmail = async (id) => {
  * Lấy chi tiết một hóa đơn
  */
 const getInvoiceById = async (id) => {
+  await updateOverdueInvoices();
   const inv = await prisma.invoice.findUnique({
     where: { id: Number(id) },
     include: {

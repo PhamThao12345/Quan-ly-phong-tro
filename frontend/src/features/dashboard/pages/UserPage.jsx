@@ -49,7 +49,12 @@ const UserPage = () => {
     }
   };
 
+  const isOwner = user?.role === 'CHU_TRO';
+
   const filteredUsers = users.filter(u => {
+    // MANAGER không thấy dòng thông tin của CHU_TRO
+    if (!isOwner && u.role === 'CHU_TRO') return false;
+
     const searchLower = (filters.search || '').toLowerCase();
     const matchSearch = 
       (u.fullName || '').toLowerCase().includes(searchLower) ||
@@ -77,7 +82,7 @@ const UserPage = () => {
         'Số điện thoại': u.phoneNumber,
         'Email': u.email,
         'CCCD': u.cccd,
-        'Quyền hạn': u.role === 'ADMIN' || u.role === 'CHU_TRO' ? 'Quản trị viên' : 'Nhân viên',
+        'Quyền hạn': u.role === 'CHU_TRO' ? 'Quản trị viên' : u.role === 'MANAGER' ? 'Quản lý' : 'Nhân viên',
         'Trạng thái': u.status === 'ACTIVE' ? 'Đang hoạt động' : u.status === 'INACTIVE' ? 'Chưa kích hoạt' : 'Bị khóa'
       }));
       const ws = XLSX.utils.json_to_sheet(data);
@@ -111,7 +116,8 @@ const UserPage = () => {
           <p className="text-[#3d4a42] font-body text-sm">Quản lý đội ngũ và phân quyền hệ thống</p>
         </div>
         <div className="flex gap-3">
-          {canView && (
+          {/* Chỉ CHU_TRO mới thấy nút Lịch sử hoạt động */}
+          {isOwner && canView && (
             <button 
               onClick={() => setIsDrawerOpen(true)}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#e7e8e9] text-[#006948] font-medium rounded-lg hover:bg-emerald-50 transition-all font-body text-sm"
@@ -199,7 +205,7 @@ const UserPage = () => {
               className="text-xs border border-[#bccac0]/30 rounded-lg px-3 py-1.5 bg-white outline-none"
             >
               <option value="">Tất cả vị trí</option>
-              <option value="ADMIN">Quản trị viên</option>
+              <option value="MANAGER">Quản lý</option>
               <option value="STAFF">Nhân viên</option>
             </select>
             <select 
@@ -241,9 +247,9 @@ const UserPage = () => {
                   <td className="px-6 py-4 text-sm text-slate-600 whitespace-nowrap">{u.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {u.role === 'CHU_TRO' ? (
-                      <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-md tracking-wider">Chủ trọ</span>
+                      <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-md tracking-wider">Quản trị viên</span>
                     ) : u.role === 'MANAGER' ? (
-                      <span className="px-2.5 py-1 bg-[#85f8c4]/30 text-[#006948] text-[10px] font-bold uppercase rounded-md tracking-wider">Quản trị viên</span>
+                      <span className="px-2.5 py-1 bg-[#85f8c4]/30 text-[#006948] text-[10px] font-bold uppercase rounded-md tracking-wider">Quản lý</span>
                     ) : (
                       <span className="px-2.5 py-1 bg-[#c0edd3] text-[#446d58] text-[10px] font-bold uppercase rounded-md tracking-wider">Nhân viên</span>
                     )}
@@ -265,10 +271,16 @@ const UserPage = () => {
                             ><span className="material-symbols-outlined text-lg">edit</span></button>
                           )}
                           {canDelete && (
-                            <button 
-                              onClick={() => { setDeletingUser(u); setIsDeleteModalOpen(true); }}
-                              className="hover:text-red-500 transition-colors" title="Xóa"
-                            ><span className="material-symbols-outlined text-lg">delete</span></button>
+                            u.role === 'CHU_TRO' ? (
+                              <button className="opacity-0 pointer-events-none cursor-default" aria-hidden="true">
+                                <span className="material-symbols-outlined text-lg">delete</span>
+                              </button>
+                            ) : (
+                              <button 
+                                onClick={() => { setDeletingUser(u); setIsDeleteModalOpen(true); }}
+                                className="hover:text-red-500 transition-colors" title="Xóa"
+                              ><span className="material-symbols-outlined text-lg">delete</span></button>
+                            )
                           )}
                         </>
                       )}
@@ -308,6 +320,7 @@ const UserPage = () => {
           onSuccess={fetchUsers}
           initialData={editingUser}
           isView={editingUser?.isView}
+          currentUserRole={user?.role}
         />
       )}
 

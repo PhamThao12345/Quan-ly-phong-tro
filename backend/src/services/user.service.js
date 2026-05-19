@@ -1,6 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
+const mailService = require('./mail.service');
 
 const prisma = new PrismaClient();
 
@@ -19,19 +19,8 @@ const sendCredentialsEmail = async (email, username, password, fullName) => {
     return;
   }
 
-  const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-
-  const mailOptions = {
-    from: `"T's House Admin" <${process.env.EMAIL_USER}>`,
-    to: email,
-    subject: 'Thông tin tài khoản T\'s House',
-    html: `
+  const subject = 'Thông tin tài khoản Quản trị viên T\'s House';
+  const html = `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
         <h2>Xin chào ${fullName || 'bạn'},</h2>
         <p>Tài khoản của bạn trên hệ thống quản lý T's House đã được tạo / cấp lại mật khẩu.</p>
@@ -44,10 +33,13 @@ const sendCredentialsEmail = async (email, username, password, fullName) => {
         <br/>
         <p>Trân trọng,<br/>T's House Team</p>
       </div>
-    `
-  };
+    `;
 
-  await transporter.sendMail(mailOptions);
+  try {
+    await mailService.sendMail({ to: email, subject, html });
+  } catch (error) {
+    console.error('Failed to send credentials email:', error);
+  }
 };
 
 const getAllUsers = async () => {
@@ -142,7 +134,7 @@ const updateUser = async (id, data, requestUser) => {
   if (!existingUser) throw { status: 404, message: 'Người dùng không tồn tại' };
 
   if (existingUser.role === 'CHU_TRO' && requestUser?.role !== 'CHU_TRO') {
-    throw { status: 403, message: 'Bạn không có quyền thao tác với tài khoản Chủ trọ' };
+    throw { status: 403, message: 'Bạn không có quyền thao tác với tài khoản Quản trị viên' };
   }
 
   // check unique fields if they are changed
@@ -196,7 +188,7 @@ const deleteUser = async (id, requestUser) => {
   if (!existingUser) throw { status: 404, message: 'Người dùng không tồn tại' };
 
   if (existingUser.role === 'CHU_TRO' && requestUser?.role !== 'CHU_TRO') {
-    throw { status: 403, message: 'Bạn không có quyền thao tác với tài khoản Chủ trọ' };
+    throw { status: 403, message: 'Bạn không có quyền thao tác với tài khoản Quản trị viên' };
   }
 
   return await prisma.user.delete({ where: { id } });
@@ -207,7 +199,7 @@ const resetPassword = async (id, requestUser) => {
   if (!user) throw { status: 404, message: 'Người dùng không tồn tại' };
 
   if (user.role === 'CHU_TRO' && requestUser?.role !== 'CHU_TRO') {
-    throw { status: 403, message: 'Bạn không có quyền thao tác với tài khoản Chủ trọ' };
+    throw { status: 403, message: 'Bạn không có quyền thao tác với tài khoản Quản trị viên' };
   }
 
   const rawPassword = generateRandomPassword();

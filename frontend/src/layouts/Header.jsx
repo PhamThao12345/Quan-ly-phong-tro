@@ -9,8 +9,8 @@ const Header = () => {
     const dropdownRef = useRef(null);
 
     let roleLabel = 'Nhân viên';
-    if (user?.role === 'CHU_TRO') roleLabel = 'Chủ trọ';
-    else if (user?.role === 'MANAGER') roleLabel = 'Quản trị viên';
+    if (user?.role === 'CHU_TRO') roleLabel = 'Quản trị viên';
+    else if (user?.role === 'MANAGER') roleLabel = 'Quản lý';
 
     const fetchNotifications = async () => {
         try {

@@ -14,7 +14,7 @@ const clearActivities = async (req, res) => {
   try {
     // Only Admin can clear
     if (req.user.role !== 'CHU_TRO') {
-      return res.status(403).json({ status: 'error', message: 'Chỉ Chủ trọ mới được phép xóa toàn bộ lịch sử' });
+      return res.status(403).json({ status: 'error', message: 'Chỉ Quản trị viên mới được phép xóa toàn bộ lịch sử' });
     }
     await activityService.clearActivities();
     await activityService.logActivity(req.user.id, 'Đã xóa toàn bộ lịch sử hoạt động', 'SYSTEM');

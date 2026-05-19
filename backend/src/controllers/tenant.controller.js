@@ -123,4 +123,32 @@ const exportTenants = async (req, res) => {
   }
 };
 
-module.exports = { getAllTenants, getTenantById, createTenant, updateTenant, deleteTenant, getStats, exportTenants };
+const lookupByCccd = async (req, res) => {
+  try {
+    const cccd = req.params.cccd?.trim();
+    if (!cccd) {
+      return res.status(400).json({ status: 'error', message: 'Vui lòng cung cấp số CCCD.' });
+    }
+    const { PrismaClient } = require('@prisma/client');
+    const prisma = new PrismaClient();
+    const tenant = await prisma.tenant.findUnique({
+      where: { cccd },
+      include: {
+        room: { include: { hostel: true } },
+        contractTenants: {
+          include: { contract: true },
+          orderBy: { createdAt: 'desc' },
+          take: 1
+        }
+      }
+    });
+    if (!tenant) {
+      return res.status(404).json({ status: 'not_found', message: 'Không tìm thấy khách thuê với CCCD này.' });
+    }
+    res.status(200).json({ status: 'success', data: tenant });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+};
+
+module.exports = { getAllTenants, getTenantById, createTenant, updateTenant, deleteTenant, getStats, exportTenants, lookupByCccd };

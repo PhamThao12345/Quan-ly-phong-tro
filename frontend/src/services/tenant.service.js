@@ -47,3 +47,8 @@ export const exportTenants = async (filters = {}) => {
   link.remove();
   window.URL.revokeObjectURL(url);
 };
+
+export const lookupByCccd = async (cccd) => {
+  const res = await apiClient.get(`/tenants/lookup-cccd/${cccd}`);
+  return res.data;
+};

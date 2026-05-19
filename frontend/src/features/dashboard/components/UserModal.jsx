@@ -12,7 +12,10 @@ const MODULES = [
   { id: 'bao_cao', name: 'Quản lý Báo cáo' }
 ];
 
-const UserModal = ({ isOpen, onClose, onSuccess, initialData, isView }) => {
+// Module bị ẩn khi tài khoản là Nhân viên
+const STAFF_HIDDEN_MODULES = ['nguoi_dung', 'bao_cao'];
+
+const UserModal = ({ isOpen, onClose, onSuccess, initialData, isView, currentUserRole }) => {
   const [formData, setFormData] = useState({
     role: 'STAFF',
     fullName: '',
@@ -55,7 +58,7 @@ const UserModal = ({ isOpen, onClose, onSuccess, initialData, isView }) => {
         }
       }
     } else {
-      // Default empty state
+      // Default: MANAGER chỉ được tạo STAFF
       setFormData({
         role: 'STAFF',
         fullName: '',
@@ -67,6 +70,11 @@ const UserModal = ({ isOpen, onClose, onSuccess, initialData, isView }) => {
       setPermissions({});
     }
   }, [initialData]);
+
+  // Module hiển thị trong bảng phân quyền tuỳ theo role được chọn
+  const visibleModules = formData.role === 'STAFF'
+    ? MODULES.filter(m => !STAFF_HIDDEN_MODULES.includes(m.id))
+    : MODULES;
 
   const handleRoleChange = (role) => {
     setFormData({ ...formData, role });
@@ -175,23 +183,26 @@ const UserModal = ({ isOpen, onClose, onSuccess, initialData, isView }) => {
             <div className="col-span-2 mb-2">
               <label className="block text-[11px] font-bold uppercase tracking-widest text-[#6d7a72] mb-3 ml-1">Vị trí</label>
               <div className="flex gap-4">
-                <label className="flex-1 relative cursor-pointer group">
-                  <input 
-                    type="radio" 
-                    name="role" 
-                    value="MANAGER" 
-                    disabled={isView || (initialData && initialData.role === 'CHU_TRO')}
-                    checked={formData.role === 'MANAGER' || formData.role === 'CHU_TRO'} // Nếu là CHU_TRO thì tick tạm vào Quản trị viên nhưng bị disable
-                    onChange={() => handleRoleChange('MANAGER')}
-                    className="peer sr-only" 
-                  />
-                  <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-[#f8f9fa] border-2 border-transparent ${!(isView || (initialData && initialData.role === 'CHU_TRO')) && 'peer-checked:border-[#006948] peer-checked:bg-[#006948]/5'} ${(isView || (initialData && initialData.role === 'CHU_TRO')) && (formData.role === 'MANAGER' || formData.role === 'CHU_TRO') ? 'border-[#006948] bg-[#006948]/5' : ''} transition-all`}>
-                    <span className={`material-symbols-outlined text-slate-300 ${(formData.role === 'MANAGER' || formData.role === 'CHU_TRO') ? 'text-[#006948]' : ''} transition-colors`} style={{ fontVariationSettings: (formData.role === 'MANAGER' || formData.role === 'CHU_TRO') ? "'FILL' 1" : "'FILL' 0" }}>
-                      {(formData.role === 'MANAGER' || formData.role === 'CHU_TRO') ? 'radio_button_checked' : 'radio_button_unchecked'}
-                    </span>
-                    <span className="text-sm font-bold text-[#191c1d]">{formData.role === 'CHU_TRO' ? 'Chủ trọ (Mặc định)' : 'Quản trị viên'}</span>
-                  </div>
-                </label>
+                {/* Chỉ CHU_TRO mới thấy lựa chọn Quản lý */}
+                {(currentUserRole === 'CHU_TRO' || (initialData && initialData.role === 'MANAGER') || (initialData && initialData.role === 'CHU_TRO')) && (
+                  <label className="flex-1 relative cursor-pointer group">
+                    <input 
+                      type="radio" 
+                      name="role" 
+                      value="MANAGER" 
+                      disabled={isView || (initialData && initialData.role === 'CHU_TRO') || currentUserRole === 'MANAGER'}
+                      checked={formData.role === 'MANAGER' || formData.role === 'CHU_TRO'}
+                      onChange={() => handleRoleChange('MANAGER')}
+                      className="peer sr-only" 
+                    />
+                    <div className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-[#f8f9fa] border-2 border-transparent ${!(isView || (initialData && initialData.role === 'CHU_TRO')) && 'peer-checked:border-[#006948] peer-checked:bg-[#006948]/5'} ${(isView || (initialData && initialData.role === 'CHU_TRO')) && (formData.role === 'MANAGER' || formData.role === 'CHU_TRO') ? 'border-[#006948] bg-[#006948]/5' : ''} transition-all`}>
+                      <span className={`material-symbols-outlined text-slate-300 ${(formData.role === 'MANAGER' || formData.role === 'CHU_TRO') ? 'text-[#006948]' : ''} transition-colors`} style={{ fontVariationSettings: (formData.role === 'MANAGER' || formData.role === 'CHU_TRO') ? "'FILL' 1" : "'FILL' 0" }}>
+                        {(formData.role === 'MANAGER' || formData.role === 'CHU_TRO') ? 'radio_button_checked' : 'radio_button_unchecked'}
+                      </span>
+                      <span className="text-sm font-bold text-[#191c1d]">{formData.role === 'CHU_TRO' ? 'Quản trị viên (Mặc định)' : 'Quản lý'}</span>
+                    </div>
+                  </label>
+                )}
                 <label className="flex-1 relative cursor-pointer group">
                   <input 
                     type="radio" 
@@ -276,43 +287,52 @@ const UserModal = ({ isOpen, onClose, onSuccess, initialData, isView }) => {
             </div>
           </div>
 
-          <div className="mb-2">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="h-[1px] flex-1 bg-slate-100"></div>
-              <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#006948]">Phân quyền hệ thống</h4>
-              <div className="h-[1px] flex-1 bg-slate-100"></div>
-            </div>
-            <div className="overflow-hidden rounded-2xl border border-slate-100">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-[#f8f9fa] text-[10px] uppercase tracking-widest text-[#6d7a72] font-bold border-b border-slate-100">
-                    <th className="py-4 px-6">Phân hệ</th>
-                    <th className="py-4 px-4 text-center">Xem</th>
-                    <th className="py-4 px-4 text-center">Thêm/Sửa</th>
-                    <th className="py-4 px-4 text-center">Xóa</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 bg-white">
-                  {MODULES.map(module => (
-                    <tr key={module.id} className="group hover:bg-[#006948]/5 transition-colors">
-                      <td className="py-4 px-6 text-sm font-semibold text-[#191c1d]">{module.name}</td>
-                      {['view', 'edit', 'delete'].map(action => (
-                        <td key={action} className="py-4 px-4 text-center">
-                          <input 
-                            type="checkbox" 
-                            disabled={isView}
-                            checked={permissions[module.id]?.[action] || false}
-                            onChange={(e) => handlePermissionChange(module.id, action, e.target.checked)}
-                            className="w-4 h-4 rounded border-slate-300 text-[#006948] focus:ring-[#006948] focus:ring-offset-0 cursor-pointer disabled:opacity-50" 
-                          />
-                        </td>
-                      ))}
+          {formData.role !== 'CHU_TRO' && (
+            <div className="mb-2">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="h-[1px] flex-1 bg-slate-100"></div>
+                <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#006948]">Phân quyền hệ thống</h4>
+                <div className="h-[1px] flex-1 bg-slate-100"></div>
+              </div>
+              <div className="overflow-hidden rounded-2xl border border-slate-100">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-[#f8f9fa] text-[10px] uppercase tracking-widest text-[#6d7a72] font-bold border-b border-slate-100">
+                      <th className="py-4 px-6">Phân hệ</th>
+                      <th className="py-4 px-4 text-center">Xem</th>
+                      <th className="py-4 px-4 text-center">Thêm/Sửa</th>
+                      <th className="py-4 px-4 text-center">Xóa</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 bg-white">
+                    {visibleModules.map(module => (
+                      <tr key={module.id} className="group hover:bg-[#006948]/5 transition-colors">
+                        <td className="py-4 px-6 text-sm font-semibold text-[#191c1d]">{module.name}</td>
+                        {['view', 'edit', 'delete'].map(action => (
+                          <td key={action} className="py-4 px-4 text-center">
+                            <input 
+                              type="checkbox" 
+                              disabled={isView}
+                              checked={permissions[module.id]?.[action] || false}
+                              onChange={(e) => handlePermissionChange(module.id, action, e.target.checked)}
+                              className="w-4 h-4 rounded border-slate-300 text-[#006948] focus:ring-[#006948] focus:ring-offset-0 cursor-pointer disabled:opacity-50" 
+                            />
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                    {formData.role === 'STAFF' && (
+                      <tr>
+                        <td colSpan="4" className="py-3 px-6 text-xs text-slate-400 italic bg-slate-50">
+                          * Tài khoản Nhân viên không được phân quyền Báo cáo và Người dùng
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="px-8 py-4 bg-[#f8f9fa] flex justify-between items-center border-t border-[#e1e3e4] flex-shrink-0">

@@ -2,6 +2,23 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 const getDashboardReport = async (filterType, year, month) => {
+  // Tự động chuyển các hóa đơn đã tạo, đã gửi quá 10 ngày sang trạng thái quá hạn
+  try {
+    const tenDaysAgo = new Date();
+    tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+    await prisma.invoice.updateMany({
+      where: {
+        status: { in: ['DA_TAO', 'DA_GUI'] },
+        createdAt: { lte: tenDaysAgo }
+      },
+      data: {
+        status: 'QUA_HAN'
+      }
+    });
+  } catch (error) {
+    console.error('Lỗi khi tự động cập nhật hóa đơn quá hạn trong Báo cáo:', error);
+  }
+
   // 1. Tổng khách thuê (status: DANG_THUE)
   const totalTenants = await prisma.tenant.count({
     where: { status: 'DANG_THUE' }

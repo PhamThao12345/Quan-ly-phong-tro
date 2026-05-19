@@ -5,12 +5,12 @@ const p = new PrismaClient();
 async function resetAccounts() {
   const newHash = await bcrypt.hash('123456aA@', 10);
   
-  // Reset tài khoản chủ trọ
+  // Reset tài khoản Quản trị viên
   const u1 = await p.user.update({
     where: { username: '0901234567' },
     data: { status: 'ACTIVE', failedLoginAttempts: 0, password: newHash }
   });
-  console.log('Reset CHU_TRO:', u1.username, u1.status);
+  console.log('Reset Quản trị viên:', u1.username, u1.status);
 
   // Reset tài khoản nhân viên 1
   const u2 = await p.user.update({
